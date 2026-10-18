@@ -1,0 +1,36 @@
+# JavaScript dependencies and package caches
+node_modules/
+.pnpm-store/
+
+# Vite and Rust build output
+/dist/
+target/
+
+# Generated Tauri schemas
+/src-tauri/gen/schemas/
+
+# Test and tool output
+coverage/
+.cache/
+playwright-report/
+test-results/
+*.log
+
+# Local credentials and configuration
+.env
+.env.*
+!.env.example
+*.local
+*.local.json
+
+# Local projects and generated exports; keep fixtures elsewhere trackable
+/projects/
+/exports/
+/.local/
+
+# macOS and editor temporary files
+.DS_Store
+._*
+*.swp
+*.swo
+*~
