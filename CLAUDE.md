@@ -46,7 +46,6 @@ A local macOS voxel workshop for one user: Claude writes build steps, determinis
 ## Gotchas
 
 - Vite only transpiles; type errors surface only through `tsc --noEmit` (`pnpm typecheck`).
-- `pnpm test` passes with no test files until stage 1 adds them; drop `--passWithNoTests` then.
 - MagicaVoxel cannot open a given file: write to its `vox/` directory, ask before quitting it, restart it, and tell the user which file to click. Never automate its UI.
 - Dragging a `.vox` into MagicaVoxel imports it with the current palette; colors look wrong. Open it from the Project list.
 

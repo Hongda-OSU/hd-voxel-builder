@@ -11,7 +11,7 @@
     "dev": "tauri dev",
     "dev:web": "vite",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "lint": "eslint . --max-warnings 0",
     "check:rust": "cargo fmt --manifest-path src-tauri/Cargo.toml -- --check && cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings",
     "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm check:rust",
