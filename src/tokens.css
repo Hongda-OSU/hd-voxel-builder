@@ -1,0 +1,16 @@
+:root {
+  color-scheme: dark;
+  --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", system-ui, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, Menlo, monospace;
+  --ground: #0b0d11;
+  --chrome: #0f1217;
+  --stage: #161a21;
+  --raised: #1b222b;
+  --ink: #e6ebf0;
+  --muted: #8f99a4;
+  --line: rgba(214, 226, 238, 0.1);
+  --line-strong: rgba(214, 226, 238, 0.22);
+  --accent: #3ee8ff;
+  --accent-ink: #06181c;
+  --warn: #f5b74a;
+}
