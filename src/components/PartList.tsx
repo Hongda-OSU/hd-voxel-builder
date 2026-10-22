@@ -19,11 +19,8 @@ export function PartList() {
 
   return (
     <div className="part-list">
-      <div className="panel__heading panel__heading--split">
-        <h2 id="parts-heading">部件</h2>
-        <span>点一下只看这一步</span>
-      </div>
-      <ol className="part-list__items" aria-labelledby="parts-heading">
+      <p className="part-list__hint">点一下只看这一步</p>
+      <ol className="part-list__items" aria-label="部件">
         {spec?.parts.map((part, index) => (
           <li key={part.name}>
             <button

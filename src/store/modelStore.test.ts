@@ -13,7 +13,8 @@ describe("modelStore", () => {
       issues: [],
       selectedPart: null,
       camera: DEFAULT_CAMERA,
-      layer: { on: false, h: 0 },
+      inspectorTab: "parts",
+      layerH: 0,
     }),
   );
 
@@ -45,16 +46,23 @@ describe("modelStore", () => {
     expect(store.getState().selectedPart).toBeNull();
   });
 
-  it("resets the layer view on load and clamps the height", () => {
+  it("starts the layer near the eyes on load and clamps steps", () => {
     store.getState().loadSpec(examples.find((e) => e.id === "hd")?.data);
-    expect(store.getState().layer).toEqual({ on: false, h: 16 });
-    store.getState().toggleLayer();
+    expect(store.getState().layerH).toBe(16);
     store.getState().setLayer(99);
-    expect(store.getState().layer).toEqual({ on: true, h: 27 });
-    store.getState().setLayer(-3);
-    expect(store.getState().layer.h).toBe(0);
-    store.getState().loadSpec(examples.find((e) => e.id === "hd")?.data);
-    expect(store.getState().layer.on).toBe(false);
+    expect(store.getState().layerH).toBe(27);
+    store.getState().stepLayer(1);
+    expect(store.getState().layerH).toBe(27);
+    store.getState().setLayer(0);
+    store.getState().stepLayer(-1);
+    expect(store.getState().layerH).toBe(0);
+    store.getState().stepLayer(1);
+    expect(store.getState().layerH).toBe(1);
+  });
+
+  it("switches inspector tabs", () => {
+    store.getState().setInspectorTab("layers");
+    expect(store.getState().inspectorTab).toBe("layers");
   });
 
   it("orbits freely in yaw and clamps pitch", () => {

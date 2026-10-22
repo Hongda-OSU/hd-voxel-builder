@@ -4,7 +4,6 @@ import { drawViewport, extractFaces } from "../render/viewport";
 import type { ViewportStyle } from "../render/viewport";
 import { useModelStore } from "../store/modelStore";
 import { PRESET_LABELS } from "./labels";
-import { LayerPanel } from "./LayerPanel";
 
 const ORBIT_SPEED = 0.01; // radians per CSS pixel
 const ZOOM_SPEED = 0.0015;
@@ -28,7 +27,8 @@ export function Viewport() {
   const grid = useModelStore((state) => state.grid);
   const camera = useModelStore((state) => state.camera);
   const selectedPart = useModelStore((state) => state.selectedPart);
-  const layer = useModelStore((state) => state.layer);
+  const inspectorTab = useModelStore((state) => state.inspectorTab);
+  const layerH = useModelStore((state) => state.layerH);
   const { orbit, pan, setView, resetCamera, clearSelection } = useModelStore.getState();
 
   const areaRef = useRef<HTMLDivElement>(null);
@@ -36,7 +36,7 @@ export function Viewport() {
   const drag = useRef<{ x: number; y: number; pan: boolean } | null>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
 
-  const maxH = layer.on ? layer.h : null;
+  const maxH = inspectorTab === "layers" ? layerH : null;
   const faces = useMemo(() => (grid ? extractFaces(grid, { revealUpTo: null, maxH }) : []), [grid, maxH]);
 
   useEffect(() => {
@@ -123,7 +123,6 @@ export function Viewport() {
         )}
       </div>
       <div className="preview__label">{viewLabel}</div>
-      <LayerPanel />
       <div className="preview__toolbar">
         {PRESET_LABELS.map((preset) => (
           <button

@@ -6,6 +6,7 @@
   --chrome: #0f1217;
   --stage: #161a21;
   --raised: #1b222b;
+  --raised-strong: #2a323d;
   --ink: #e6ebf0;
   --muted: #8f99a4;
   --line: rgba(214, 226, 238, 0.1);
@@ -15,7 +16,6 @@
   --grid-major: rgba(214, 226, 238, 0.16);
   --grid-edge: rgba(214, 226, 238, 0.3);
   --gizmo-backdrop: rgba(15, 18, 23, 0.85);
-  --overlay: rgba(15, 18, 23, 0.92);
   --slice-empty: #07090c;
   --slice-outline: rgba(255, 255, 255, 0.16);
   --accent-soft: rgba(62, 232, 255, 0.1);
