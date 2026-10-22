@@ -170,18 +170,23 @@ ul {
   flex: 1;
   min-height: 0;
   position: relative;
-  padding: 40px 24px 72px;
 }
 
 .preview__area {
-  position: relative;
-  height: 100%;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
 }
 
-.preview__area canvas {
+.preview__canvas {
   position: absolute;
   inset: 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+.preview__canvas:active {
+  cursor: grabbing;
 }
 
 .preview__empty {
@@ -196,6 +201,7 @@ ul {
   position: absolute;
   top: 14px;
   left: 16px;
+  pointer-events: none;
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 12px;
@@ -226,6 +232,11 @@ ul {
   border: 0;
   border-radius: 6px;
   background: transparent;
+}
+
+.tool-button--square {
+  min-width: 36px;
+  padding: 0 10px;
 }
 
 .tool-button:hover:not(:disabled) {

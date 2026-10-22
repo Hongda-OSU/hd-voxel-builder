@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { examples } from "../prompts/examples";
+import { DEFAULT_CAMERA, PITCH_MAX, ZOOM_LIMITS } from "../render/viewport";
 import { useModelStore } from "./modelStore";
 
 const store = useModelStore;
 
 describe("modelStore", () => {
-  beforeEach(() => store.setState({ spec: null, grid: null, issues: [], selectedPart: null, rotation: 0 }));
+  beforeEach(() => store.setState({ spec: null, grid: null, issues: [], selectedPart: null, camera: DEFAULT_CAMERA }));
 
   it("bundles the avatar example", () => {
     expect(examples.map((e) => e.id)).toContain("hd");
@@ -35,10 +36,22 @@ describe("modelStore", () => {
     expect(store.getState().selectedPart).toBeNull();
   });
 
-  it("wraps rotation both ways", () => {
-    store.getState().rotate(-1);
-    expect(store.getState().rotation).toBe(3);
-    store.getState().rotate(1);
-    expect(store.getState().rotation).toBe(0);
+  it("orbits freely in yaw and clamps pitch", () => {
+    store.getState().orbit(10, 10);
+    expect(store.getState().camera.yaw).toBeCloseTo(DEFAULT_CAMERA.yaw + 10);
+    expect(store.getState().camera.pitch).toBe(PITCH_MAX);
+    store.getState().orbit(0, -20);
+    expect(store.getState().camera.pitch).toBe(0);
+  });
+
+  it("clamps zoom, applies presets and resets", () => {
+    store.getState().zoomBy(100);
+    expect(store.getState().camera.zoom).toBe(ZOOM_LIMITS.max);
+    store.getState().pan(5, -3);
+    store.getState().setView("top");
+    const { camera } = store.getState();
+    expect([camera.yaw, camera.pitch, camera.panX, camera.panY]).toEqual([0, PITCH_MAX, 5, -3]);
+    store.getState().resetCamera();
+    expect(store.getState().camera).toEqual(DEFAULT_CAMERA);
   });
 });

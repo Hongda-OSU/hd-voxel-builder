@@ -15,11 +15,9 @@ export function StatusBar() {
   const [w, d, h] = spec.size;
   return (
     <footer className="status-bar">
+      <span>拖动旋转 · 滚轮缩放 · ⇧ 拖动平移 · 双击重置</span>
       <span>
-        {w} × {d} × {h}
-      </span>
-      <span>
-        {stats.voxels.toLocaleString("en-US")} 体素 · {stats.colors} 色 · {spec.parts.length} 部件
+        {w} × {d} × {h} · {stats.voxels.toLocaleString("en-US")} 体素 · {stats.colors} 色 · {spec.parts.length} 部件
       </span>
     </footer>
   );

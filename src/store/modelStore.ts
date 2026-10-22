@@ -3,7 +3,8 @@ import { buildModel } from "../core/buildModel";
 import { checkGrid, validateSpec } from "../core/spec";
 import type { Issue } from "../core/spec";
 import type { VoxelGrid, VoxelSpec } from "../core/types";
-import type { Rotation } from "../render/iso";
+import { DEFAULT_CAMERA, VIEW_PRESETS, clampPitch, clampZoom } from "../render/viewport";
+import type { Camera, PresetId } from "../render/viewport";
 
 interface ModelState {
   spec: VoxelSpec | null;
@@ -11,12 +12,18 @@ interface ModelState {
   issues: Issue[];
   /** Highlighted part index. */
   selectedPart: number | null;
-  rotation: Rotation;
+  camera: Camera;
   /** Validates and builds external JSON; an invalid shape leaves no model. */
   loadSpec: (input: unknown) => void;
   togglePart: (index: number) => void;
   clearSelection: () => void;
-  rotate: (turns: 1 | -1) => void;
+  /** Turns the camera by radians; pitch stays between level and straight down. */
+  orbit: (dYaw: number, dPitch: number) => void;
+  /** Moves the view by CSS pixels. */
+  pan: (dx: number, dy: number) => void;
+  zoomBy: (factor: number) => void;
+  setView: (preset: PresetId) => void;
+  resetCamera: () => void;
 }
 
 export const useModelStore = create<ModelState>((set) => ({
@@ -24,7 +31,7 @@ export const useModelStore = create<ModelState>((set) => ({
   grid: null,
   issues: [],
   selectedPart: null,
-  rotation: 0,
+  camera: DEFAULT_CAMERA,
   loadSpec: (input) => {
     const { spec, issues } = validateSpec(input);
     if (!spec) {
@@ -36,5 +43,10 @@ export const useModelStore = create<ModelState>((set) => ({
   },
   togglePart: (index) => set((state) => ({ selectedPart: state.selectedPart === index ? null : index })),
   clearSelection: () => set({ selectedPart: null }),
-  rotate: (turns) => set((state) => ({ rotation: ((state.rotation + turns + 4) % 4) as Rotation })),
+  orbit: (dYaw, dPitch) =>
+    set(({ camera }) => ({ camera: { ...camera, yaw: camera.yaw + dYaw, pitch: clampPitch(camera.pitch + dPitch) } })),
+  pan: (dx, dy) => set(({ camera }) => ({ camera: { ...camera, panX: camera.panX + dx, panY: camera.panY + dy } })),
+  zoomBy: (factor) => set(({ camera }) => ({ camera: { ...camera, zoom: clampZoom(camera.zoom * factor) } })),
+  setView: (preset) => set(({ camera }) => ({ camera: { ...camera, ...VIEW_PRESETS[preset] } })),
+  resetCamera: () => set({ camera: DEFAULT_CAMERA }),
 }));

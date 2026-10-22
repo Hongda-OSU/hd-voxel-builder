@@ -1,5 +1,5 @@
 import type { Part, Style } from "../core/types";
-import type { Rotation } from "../render/iso";
+import type { PresetId } from "../render/viewport";
 
 export const STYLE_LABELS: Record<Style, string> = {
   chibi: "Q 版人物",
@@ -7,12 +7,13 @@ export const STYLE_LABELS: Record<Style, string> = {
   diorama: "场景小件",
 };
 
-export const ROTATION_LABELS: Record<Rotation, string> = {
-  0: "正面偏右",
-  1: "右侧偏后",
-  2: "背面偏左",
-  3: "左侧偏前",
-};
+export const PRESET_LABELS: { id: PresetId; label: string; aria: string }[] = [
+  { id: "front", label: "前", aria: "正面视图" },
+  { id: "right", label: "右", aria: "右侧视图" },
+  { id: "back", label: "后", aria: "背面视图" },
+  { id: "left", label: "左", aria: "左侧视图" },
+  { id: "top", label: "顶", aria: "顶视图" },
+];
 
 export function partTags(part: Part): string {
   const tags: string[] = [];

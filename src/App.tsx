@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { ExamplePanel } from "./components/ExamplePanel";
-import { IsoPreview } from "./components/IsoPreview";
+import { Viewport } from "./components/Viewport";
 import { IssueList } from "./components/IssueList";
 import { PartList } from "./components/PartList";
 import { StatusBar } from "./components/StatusBar";
@@ -21,8 +21,8 @@ export default function App() {
       <TitleBar />
       <main className="workspace">
         <ExamplePanel />
-        <section className="stage" aria-label="预览">
-          <IsoPreview />
+        <section className="stage" aria-label="3D 视口">
+          <Viewport />
           <StatusBar />
         </section>
         <aside className="panel panel--right" aria-label="部件与校验">

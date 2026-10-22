@@ -11,7 +11,10 @@
   --line: rgba(214, 226, 238, 0.1);
   --line-strong: rgba(214, 226, 238, 0.22);
   --hover: rgba(214, 226, 238, 0.06);
-  --floor: rgba(214, 226, 238, 0.06);
+  --grid-line: rgba(214, 226, 238, 0.1);
+  --grid-edge: rgba(214, 226, 238, 0.22);
+  --grid-far: rgba(214, 226, 238, 0.04);
+  --gizmo-backdrop: rgba(15, 18, 23, 0.85);
   --accent-soft: rgba(62, 232, 255, 0.1);
   --accent: #3ee8ff;
   --accent-ink: #06181c;
