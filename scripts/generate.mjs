@@ -37,12 +37,14 @@ const read = (path) => readFile(resolve(prompts, path), "utf8");
 
 async function systemPrompt() {
   if (values.describe) return read("describe.md");
-  const [template, preset, example] = await Promise.all([
+  const [template, preset, reference, example] = await Promise.all([
     read("system.md"),
     read(`presets/${values.style}.md`),
+    read("reference.md"),
     read("examples/hd.json"),
   ]);
-  return template.replace("{{STYLE_PRESET}}", preset.trim()).replace("{{EXAMPLE_SPEC}}", example.trim());
+  const style = values.image.length > 0 ? `${preset.trim()}\n\n${reference.trim()}` : preset.trim();
+  return template.replace("{{STYLE_PRESET}}", style).replace("{{EXAMPLE_SPEC}}", example.trim());
 }
 
 async function userMessage() {
