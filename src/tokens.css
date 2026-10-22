@@ -10,7 +10,11 @@
   --muted: #8f99a4;
   --line: rgba(214, 226, 238, 0.1);
   --line-strong: rgba(214, 226, 238, 0.22);
+  --hover: rgba(214, 226, 238, 0.06);
+  --floor: rgba(214, 226, 238, 0.06);
+  --accent-soft: rgba(62, 232, 255, 0.1);
   --accent: #3ee8ff;
   --accent-ink: #06181c;
   --warn: #f5b74a;
+  --error: #ff7a6b;
 }

@@ -3,5 +3,5 @@
   "identifier": "main",
   "description": "Core window capability for the local workspace",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": ["core:default", "core:window:allow-start-dragging"]
 }

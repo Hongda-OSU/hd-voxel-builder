@@ -1,4 +1,35 @@
-// Placeholder until the M1 preview layout lands.
+import { useEffect } from "react";
+import { ExamplePanel } from "./components/ExamplePanel";
+import { IsoPreview } from "./components/IsoPreview";
+import { IssueList } from "./components/IssueList";
+import { PartList } from "./components/PartList";
+import { StatusBar } from "./components/StatusBar";
+import { TitleBar } from "./components/TitleBar";
+import { examples } from "./prompts/examples";
+import { useModelStore } from "./store/modelStore";
+
 export default function App() {
-  return <main className="app-shell">HD 体素工坊</main>;
+  const loadSpec = useModelStore((state) => state.loadSpec);
+
+  useEffect(() => {
+    const first = examples[0];
+    if (first) loadSpec(first.data);
+  }, [loadSpec]);
+
+  return (
+    <div className="app">
+      <TitleBar />
+      <main className="workspace">
+        <ExamplePanel />
+        <section className="stage" aria-label="预览">
+          <IsoPreview />
+          <StatusBar />
+        </section>
+        <aside className="panel panel--right" aria-label="部件与校验">
+          <PartList />
+          <IssueList />
+        </aside>
+      </main>
+    </div>
+  );
 }

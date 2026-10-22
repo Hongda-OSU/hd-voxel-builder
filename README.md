@@ -4,7 +4,7 @@
 
 A local macOS app that turns text descriptions and reference images into voxel models, with interactive previews, conversational edits, and MagicaVoxel export.
 
-**Status:** Desktop scaffold. The window opens with a placeholder; geometry, preview, generation, export, and storage are not implemented yet.
+**Status:** M1 in progress. The app previews bundled example models with rotation, part highlighting, and validation; generation, MagicaVoxel export, and storage are not implemented yet.
 
 ## Features
 

@@ -15,10 +15,12 @@
       "title": "HD 体素工坊",
       "width": 1180,
       "height": 780,
-      "minWidth": 800,
-      "minHeight": 720,
+      "minWidth": 1000,
+      "minHeight": 640,
       "center": true,
-      "backgroundColor": "#0b0d11"
+      "backgroundColor": "#0b0d11",
+      "titleBarStyle": "Overlay",
+      "hiddenTitle": true
     }],
     "security": {
       "csp": "default-src 'self'; img-src 'self' data:; style-src 'self'; connect-src ipc: http://ipc.localhost",
