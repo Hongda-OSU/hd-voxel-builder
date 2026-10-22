@@ -4,14 +4,14 @@
 
 A local macOS app that turns text descriptions and reference images into voxel models, with interactive previews, conversational edits, and MagicaVoxel export.
 
-**Status:** M1 in progress. The app previews bundled example models with rotation, part highlighting, and validation; generation, MagicaVoxel export, and storage are not implemented yet.
+**Status:** M1 in progress. The app shows bundled example models in an orbiting 3D viewport with layer slices, part highlighting, and validation; generation, MagicaVoxel export, and storage are not implemented yet.
 
 ## Features
 
 Planned:
 
 - Generate original chibi characters, objects, and small scenes from text, optionally drafted from reference images.
-- Preview models with rotation, ambient occlusion, part highlighting, and build animations.
+- Inspect models in an orbiting 3D viewport with layer slices, part highlighting, and build animations.
 - Refine models through conversation, with saved versions and rollback.
 - Export `.vox` files to MagicaVoxel and reopen saved projects locally.
 

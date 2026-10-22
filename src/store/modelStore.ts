@@ -13,6 +13,8 @@ interface ModelState {
   /** Highlighted part index. */
   selectedPart: number | null;
   camera: Camera;
+  /** Layer view: when on, voxels above height h are hidden. */
+  layer: { on: boolean; h: number };
   /** Validates and builds external JSON; an invalid shape leaves no model. */
   loadSpec: (input: unknown) => void;
   togglePart: (index: number) => void;
@@ -24,7 +26,13 @@ interface ModelState {
   zoomBy: (factor: number) => void;
   setView: (preset: PresetId) => void;
   resetCamera: () => void;
+  toggleLayer: () => void;
+  /** Clamped to the model's height. */
+  setLayer: (h: number) => void;
 }
+
+// Opens the layer view a little above the middle, around a chibi's eyes.
+const initialLayer = (height: number) => Math.floor(height * 0.6);
 
 export const useModelStore = create<ModelState>((set) => ({
   spec: null,
@@ -32,14 +40,21 @@ export const useModelStore = create<ModelState>((set) => ({
   issues: [],
   selectedPart: null,
   camera: DEFAULT_CAMERA,
+  layer: { on: false, h: 0 },
   loadSpec: (input) => {
     const { spec, issues } = validateSpec(input);
     if (!spec) {
-      set({ spec: null, grid: null, issues, selectedPart: null });
+      set({ spec: null, grid: null, issues, selectedPart: null, layer: { on: false, h: 0 } });
       return;
     }
     const grid = buildModel(spec);
-    set({ spec, grid, issues: [...issues, ...checkGrid(spec, grid)], selectedPart: null });
+    set({
+      spec,
+      grid,
+      issues: [...issues, ...checkGrid(spec, grid)],
+      selectedPart: null,
+      layer: { on: false, h: initialLayer(spec.size[2]) },
+    });
   },
   togglePart: (index) => set((state) => ({ selectedPart: state.selectedPart === index ? null : index })),
   clearSelection: () => set({ selectedPart: null }),
@@ -49,4 +64,10 @@ export const useModelStore = create<ModelState>((set) => ({
   zoomBy: (factor) => set(({ camera }) => ({ camera: { ...camera, zoom: clampZoom(camera.zoom * factor) } })),
   setView: (preset) => set(({ camera }) => ({ camera: { ...camera, ...VIEW_PRESETS[preset] } })),
   resetCamera: () => set({ camera: DEFAULT_CAMERA }),
+  toggleLayer: () => set(({ layer }) => ({ layer: { ...layer, on: !layer.on } })),
+  setLayer: (h) =>
+    set(({ layer, spec }) => {
+      const top = (spec?.size[2] ?? 1) - 1;
+      return { layer: { ...layer, h: Math.max(0, Math.min(top, Math.round(h))) } };
+    }),
 }));

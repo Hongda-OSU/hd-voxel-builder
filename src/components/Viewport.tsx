@@ -4,6 +4,7 @@ import { drawViewport, extractFaces } from "../render/viewport";
 import type { ViewportStyle } from "../render/viewport";
 import { useModelStore } from "../store/modelStore";
 import { PRESET_LABELS } from "./labels";
+import { LayerPanel } from "./LayerPanel";
 
 const ORBIT_SPEED = 0.01; // radians per CSS pixel
 const ZOOM_SPEED = 0.0015;
@@ -27,6 +28,7 @@ export function Viewport() {
   const grid = useModelStore((state) => state.grid);
   const camera = useModelStore((state) => state.camera);
   const selectedPart = useModelStore((state) => state.selectedPart);
+  const layer = useModelStore((state) => state.layer);
   const { orbit, pan, setView, resetCamera, clearSelection } = useModelStore.getState();
 
   const areaRef = useRef<HTMLDivElement>(null);
@@ -34,7 +36,8 @@ export function Viewport() {
   const drag = useRef<{ x: number; y: number; pan: boolean } | null>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
 
-  const faces = useMemo(() => (grid ? extractFaces(grid) : []), [grid]);
+  const maxH = layer.on ? layer.h : null;
+  const faces = useMemo(() => (grid ? extractFaces(grid, { revealUpTo: null, maxH }) : []), [grid, maxH]);
 
   useEffect(() => {
     const area = areaRef.current;
@@ -98,6 +101,7 @@ export function Viewport() {
 
   let viewLabel = `方位 ${degrees(camera.yaw)}° · 俯角 ${degrees(camera.pitch)}° · ${Math.round(camera.zoom * 100)}%`;
   if (selectedPart !== null) viewLabel += ` · 只看第 ${selectedPart + 1} 步`;
+  if (maxH !== null) viewLabel += ` · 剖到 h = ${maxH}`;
 
   return (
     <div className="preview">
@@ -119,6 +123,7 @@ export function Viewport() {
         )}
       </div>
       <div className="preview__label">{viewLabel}</div>
+      <LayerPanel />
       <div className="preview__toolbar">
         {PRESET_LABELS.map((preset) => (
           <button

@@ -6,7 +6,16 @@ import { useModelStore } from "./modelStore";
 const store = useModelStore;
 
 describe("modelStore", () => {
-  beforeEach(() => store.setState({ spec: null, grid: null, issues: [], selectedPart: null, camera: DEFAULT_CAMERA }));
+  beforeEach(() =>
+    store.setState({
+      spec: null,
+      grid: null,
+      issues: [],
+      selectedPart: null,
+      camera: DEFAULT_CAMERA,
+      layer: { on: false, h: 0 },
+    }),
+  );
 
   it("bundles the avatar example", () => {
     expect(examples.map((e) => e.id)).toContain("hd");
@@ -34,6 +43,18 @@ describe("modelStore", () => {
     expect(store.getState().selectedPart).toBe(3);
     store.getState().togglePart(3);
     expect(store.getState().selectedPart).toBeNull();
+  });
+
+  it("resets the layer view on load and clamps the height", () => {
+    store.getState().loadSpec(examples.find((e) => e.id === "hd")?.data);
+    expect(store.getState().layer).toEqual({ on: false, h: 16 });
+    store.getState().toggleLayer();
+    store.getState().setLayer(99);
+    expect(store.getState().layer).toEqual({ on: true, h: 27 });
+    store.getState().setLayer(-3);
+    expect(store.getState().layer.h).toBe(0);
+    store.getState().loadSpec(examples.find((e) => e.id === "hd")?.data);
+    expect(store.getState().layer.on).toBe(false);
   });
 
   it("orbits freely in yaw and clamps pitch", () => {
