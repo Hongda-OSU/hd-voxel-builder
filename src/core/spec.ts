@@ -14,7 +14,7 @@ export interface Issue {
   part?: string;
 }
 
-const STYLES: Style[] = ["chibi", "object", "diorama"];
+export const STYLES: Style[] = ["chibi", "object", "diorama"];
 
 type Json = Record<string, unknown>;
 type Fail = (path: string, problem: string) => void;

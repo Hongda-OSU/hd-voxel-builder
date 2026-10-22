@@ -1,0 +1,40 @@
+{
+  "title": "VoxelSpec",
+  "description": "The complete build plan for one voxel model.",
+  "type": "object",
+  "required": ["name", "style", "size", "palette", "parts"],
+  "properties": {
+    "name": { "type": "string" },
+    "style": { "enum": ["chibi", "object", "diorama"] },
+    "size": { "type": "array", "items": { "type": "integer", "minimum": 1, "maximum": 64 }, "minItems": 3, "maxItems": 3 },
+    "palette": {
+      "type": "object",
+      "maxProperties": 24,
+      "propertyNames": { "pattern": "^[A-Za-z]{1,2}$" },
+      "additionalProperties": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+    },
+    "parts": {
+      "type": "array",
+      "maxItems": 60,
+      "items": {
+        "type": "object",
+        "required": ["name", "color"],
+        "properties": {
+          "name": { "type": "string" },
+          "color": { "type": "string" },
+          "boxes": { "type": "array", "items": { "type": "array", "items": { "type": "integer" }, "minItems": 6, "maxItems": 6 } },
+          "cells": { "type": "array", "items": { "type": "array", "items": { "type": "integer" }, "minItems": 3, "maxItems": 3 } },
+          "sphere": {
+            "type": "object",
+            "required": ["x", "h", "d", "r"],
+            "properties": { "x": { "type": "number" }, "h": { "type": "number" }, "d": { "type": "number" }, "r": { "type": "number", "minimum": 0.5 } }
+          },
+          "chamfer": { "enum": ["all", "v"] },
+          "mirrorX": { "type": "boolean" },
+          "paint": { "type": "boolean" },
+          "group": { "type": "string" }
+        }
+      }
+    }
+  }
+}
