@@ -40,3 +40,11 @@ pnpm build  # Build the macOS application
 ```
 
 The app is built at `src-tauri/target/release/bundle/macos/HD Voxel Builder.app`. See the [product specification](https://app.notion.com/p/3f560d3cf9f381cbb1f3cae5d02edb27) for milestones.
+
+To try the prompts without the app, `pnpm gen` asks the logged-in Claude Code for a spec and saves it to `src/prompts/examples/<slug>-<model>.local.json`, which git ignores:
+
+```sh
+pnpm gen basketball --style object --model sonnet "一个篮球"
+pnpm gen hero --style chibi --model opus --image ref.png "做成图里这个角色"
+pnpm gen hero --describe --image ref.png   # Draft a description from images
+```
