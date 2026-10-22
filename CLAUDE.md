@@ -4,7 +4,7 @@ A local macOS voxel workshop for one user: Claude writes build steps, determinis
 
 ## Stack
 
-- Desktop: Tauri 2; Rust handles API requests, local files, and native integration.
+- Desktop: Tauri 2; Rust runs `claude -p`, local files, and native integration.
 - UI: Vite, React 19, TypeScript (strict), Zustand, handwritten CSS tokens (dark only).
 - Package manager: **pnpm**; keep `pnpm-lock.yaml` and `Cargo.lock` tracked.
 - Tests: Vitest, beside sources as `*.test.ts`.
@@ -33,7 +33,7 @@ A local macOS voxel workshop for one user: Claude writes build steps, determinis
 - Export X = x, Y = d, Z = h, then rotate 180° around Z.
 - Keep `src/core` free of React and native APIs; keep part provenance per voxel for highlighting.
 - Code lives in `src/core`, `src/render`, `src/prompts`, `src/store`, `src/components`, and `src-tauri/src`.
-- The API key lives in a Rust-read app-data config file (mode 0600); never return it to the frontend.
+- AI calls go through Rust spawning the logged-in Claude Code: `claude -p` with `--json-schema` and `--tools ""`. The app stores no API key.
 - Projects and reference images live under `~/HDVoxel/projects/`, never in the repo.
 - Once `src/prompts` exists it is authoritative; sync the Notion copies.
 - After code changes run affected tests and `pnpm check`; do not commit failing checks.

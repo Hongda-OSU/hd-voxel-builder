@@ -17,7 +17,7 @@ Planned:
 
 ## Tech Stack
 
-- Desktop: Tauri 2 and Rust for Claude API requests and native operations.
+- Desktop: Tauri 2 and Rust, which calls the logged-in Claude Code (`claude -p`) and handles native operations.
 - UI: Vite, React 19, TypeScript (strict mode), Zustand, and handwritten CSS.
 - Model pipeline: custom Canvas 2D renderer, deterministic geometry, and `.vox` writer in TypeScript.
 - Storage: local project folders; no database or cloud account.
