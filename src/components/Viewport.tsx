@@ -13,9 +13,9 @@ function readStyle(): ViewportStyle {
   const css = getComputedStyle(document.documentElement);
   const token = (name: string) => css.getPropertyValue(name).trim();
   return {
-    gridLine: token("--grid-line"),
+    gridFine: token("--grid-fine"),
+    gridMajor: token("--grid-major"),
     gridEdge: token("--grid-edge"),
-    gridFar: token("--grid-far"),
     gizmoBackdrop: token("--gizmo-backdrop"),
     gizmoText: token("--ground"),
   };

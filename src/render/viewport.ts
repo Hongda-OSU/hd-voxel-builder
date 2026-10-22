@@ -101,7 +101,7 @@ export interface Camera {
 }
 
 export const PITCH_MAX = Math.PI / 2 - 0.001;
-export const ZOOM_LIMITS = { min: 0.3, max: 6 };
+export const ZOOM_LIMITS = { min: 0.1, max: 12 };
 
 const deg = (d: number) => (d * Math.PI) / 180;
 
@@ -125,7 +125,14 @@ export interface Projector {
   project: (p: Vec3) => [number, number, number];
   /** Positive when a face with this normal faces the camera. */
   facing: (n: Vec3) => number;
+  /** The floor (h = 0) point [x, d] under a screen point; null when the floor is edge-on. */
+  toFloor: (sx: number, sy: number) => [number, number] | null;
+  /** Screen pixels per grid cell. */
+  scale: number;
 }
+
+// Below this pitch the floor is too close to edge-on to solve for.
+const EDGE_ON = 0.03;
 
 /** Rotates a grid-space vector into camera space: [right, up, toward the camera]. */
 export function toCamera(camera: Pick<Camera, "yaw" | "pitch">, [x, h, d]: Vec3): Vec3 {
@@ -146,7 +153,33 @@ export function makeProjector(size: VoxelGrid["size"], camera: Camera, width: nu
       return [ox + vx * scale, oy - vy * scale, vz];
     },
     facing: (n) => toCamera(camera, n)[2],
+    toFloor: (sx, sy) => {
+      const sp = Math.sin(camera.pitch);
+      if (sp < EDGE_ON) return null;
+      // Orthographic: invert the projection with the floor's height fixed.
+      const right = (sx - ox) / scale;
+      const up = -(sy - oy) / scale;
+      const toward = (-(tall / 2) * Math.cos(camera.pitch) - up) / sp;
+      const cosYaw = Math.cos(camera.yaw);
+      const sinYaw = Math.sin(camera.yaw);
+      return [right * cosYaw + toward * sinYaw + w / 2, -right * sinYaw + toward * cosYaw + depth / 2];
+    },
+    scale,
   };
+}
+
+const MIN_LINE_GAP = 6; // CSS pixels between fine grid lines
+const MAX_MAJOR_LINES = 240;
+const FINE_REACH = 80; // fine lines drawn this many steps from the centre
+const MAX_REACH = 5000; // cells; far enough to look endless
+
+/** Fine grid spacing in cells (1, 10, 100…) and the major spacing above it. */
+export function gridSteps(pixelsPerCell: number, reach: number): { fine: number; major: number } {
+  let fine = 1;
+  if (pixelsPerCell > 0) while (fine * pixelsPerCell < MIN_LINE_GAP) fine *= 10;
+  let major = fine * 10;
+  while ((2 * reach) / major > MAX_MAJOR_LINES) major *= 10;
+  return { fine, major };
 }
 
 /** Camera-facing faces sorted far to near for the painter's algorithm. */
@@ -159,9 +192,10 @@ export function visibleFaces(faces: Face[], projector: Projector): Face[] {
 }
 
 export interface ViewportStyle {
-  gridLine: string;
+  gridFine: string;
+  gridMajor: string;
+  /** The canvas footprint and the horizon line. */
   gridEdge: string;
-  gridFar: string;
   gizmoBackdrop: string;
   gizmoText: string;
 }
@@ -195,7 +229,7 @@ export function drawViewport(
   ctx.clearRect(0, 0, width, height);
   ctx.globalAlpha = 1;
 
-  drawFloorGrid(ctx, size, projector, style);
+  drawFloor(ctx, size, projector, width, height, style);
 
   ctx.lineJoin = "round";
   ctx.lineWidth = 1;
@@ -214,23 +248,98 @@ export function drawViewport(
   drawGizmo(ctx, options.camera, width - 42, 42, style);
 }
 
-function drawFloorGrid(ctx: CanvasRenderingContext2D, size: VoxelGrid["size"], projector: Projector, style: ViewportStyle) {
+/**
+ * An endless floor like an editor viewport: grid lines over all the visible floor,
+ * fading with distance, coarser when zoomed out, plus x / d axis lines and the
+ * canvas footprint.
+ */
+function drawFloor(
+  ctx: CanvasRenderingContext2D,
+  size: VoxelGrid["size"],
+  projector: Projector,
+  width: number,
+  height: number,
+  style: ViewportStyle,
+) {
   const [w, depth] = size;
-  const pad = 8;
+  const cx = w / 2;
+  const cz = depth / 2;
+  const corners = [projector.toFloor(0, 0), projector.toFloor(width, 0), projector.toFloor(0, height), projector.toFloor(width, height)];
   ctx.lineWidth = 1;
-  const line = (from: Vec3, to: Vec3, color: string) => {
-    const a = projector.project(from);
-    const b = projector.project(to);
-    ctx.strokeStyle = color;
+  if (corners.some((c) => c === null)) {
+    const [, y] = projector.project([cx, 0, cz]);
+    ctx.strokeStyle = style.gridEdge;
     ctx.beginPath();
-    ctx.moveTo(a[0], a[1]);
-    ctx.lineTo(b[0], b[1]);
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
     ctx.stroke();
+    return;
+  }
+  const reach = Math.min(
+    MAX_REACH,
+    Math.max(...corners.map((c) => (c ? Math.hypot(c[0] - cx, c[1] - cz) : 0))),
+  );
+  const { fine, major } = gridSteps(projector.scale, reach);
+  strokeGrid(ctx, projector, [cx, cz], fine, Math.min(reach, fine * FINE_REACH), style.gridFine);
+  strokeGrid(ctx, projector, [cx, cz], major, reach, style.gridMajor);
+
+  for (const axis of AXES.filter((a) => a.dir[1] === 0)) {
+    const from = projector.project([cx - axis.dir[0] * reach, 0, cz - axis.dir[2] * reach]);
+    const to = projector.project([cx + axis.dir[0] * reach, 0, cz + axis.dir[2] * reach]);
+    const gradient = ctx.createLinearGradient(from[0], from[1], to[0], to[1]);
+    gradient.addColorStop(0, `${axis.color}00`);
+    gradient.addColorStop(0.5, `${axis.color}8c`);
+    gradient.addColorStop(1, `${axis.color}00`);
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(from[0], from[1]);
+    ctx.lineTo(to[0], to[1]);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = style.gridEdge;
+  ctx.lineWidth = 1;
+  polygon(ctx, [projector.project([0, 0, 0]), projector.project([w, 0, 0]), projector.project([w, 0, depth]), projector.project([0, 0, depth])]);
+  ctx.stroke();
+}
+
+const FADE_BUCKETS = 6;
+
+/** Grid lines every `step` cells within `radius` of the centre, fading outward. */
+function strokeGrid(
+  ctx: CanvasRenderingContext2D,
+  projector: Projector,
+  [cx, cz]: [number, number],
+  step: number,
+  radius: number,
+  color: string,
+) {
+  // One path per fade level keeps the stroke count small.
+  const paths = Array.from({ length: FADE_BUCKETS }, () => new Path2D());
+  const chunk = Math.max(step / 2, radius / 24);
+  const segment = (a: [number, number], b: [number, number]) => {
+    const fade = 1 - Math.hypot((a[0] + b[0]) / 2 - cx, (a[1] + b[1]) / 2 - cz) / radius;
+    if (fade <= 0) return;
+    const path = paths[Math.min(FADE_BUCKETS - 1, Math.floor(fade * FADE_BUCKETS))];
+    const p1 = projector.project([a[0], 0, a[1]]);
+    const p2 = projector.project([b[0], 0, b[1]]);
+    path?.moveTo(p1[0], p1[1]);
+    path?.lineTo(p2[0], p2[1]);
   };
-  const colorAt = (i: number, max: number) =>
-    i === 0 || i === max ? style.gridEdge : i > 0 && i < max ? style.gridLine : style.gridFar;
-  for (let x = -pad; x <= w + pad; x++) line([x, 0, -pad], [x, 0, depth + pad], colorAt(x, w));
-  for (let d = -pad; d <= depth + pad; d++) line([-pad, 0, d], [w + pad, 0, d], colorAt(d, depth));
+  for (let x = Math.ceil((cx - radius) / step) * step; x <= cx + radius; x += step) {
+    for (let t = -radius; t < radius; t += chunk) segment([x, cz + t], [x, cz + t + chunk]);
+  }
+  for (let d = Math.ceil((cz - radius) / step) * step; d <= cz + radius; d += step) {
+    for (let t = -radius; t < radius; t += chunk) segment([cx + t, d], [cx + t + chunk, d]);
+  }
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  paths.forEach((path, i) => {
+    ctx.globalAlpha = (i + 1) / FADE_BUCKETS;
+    ctx.stroke(path);
+  });
+  ctx.globalAlpha = 1;
 }
 
 function drawGizmo(ctx: CanvasRenderingContext2D, camera: Camera, cx: number, cy: number, style: ViewportStyle) {

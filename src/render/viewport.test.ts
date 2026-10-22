@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildModel } from "../core/buildModel";
 import type { Part, VoxelSpec } from "../core/types";
-import { DEFAULT_CAMERA, VIEW_PRESETS, extractFaces, makeProjector, toCamera, visibleFaces } from "./viewport";
+import { DEFAULT_CAMERA, VIEW_PRESETS, extractFaces, gridSteps, makeProjector, toCamera, visibleFaces } from "./viewport";
 import type { Camera, Vec3 } from "./viewport";
 
 function grid(parts: Part[], size: VoxelSpec["size"] = [4, 4, 4]) {
@@ -92,6 +92,37 @@ describe("makeProjector", () => {
     expect(p.project([2, 3, 2])[1]).toBeLessThan(p.project([2, 1, 2])[1]);
     // From the top, the front points down the screen (negative up).
     expect(toCamera(VIEW_PRESETS.top, FRONT)[1]).toBeLessThan(-0.99);
+  });
+});
+
+describe("toFloor", () => {
+  it("inverts the projection for floor points", () => {
+    for (const cam of [DEFAULT_CAMERA, camera(2.1, 0.4), { ...camera(-1, 1.2), zoom: 3, panX: 40, panY: -25 }]) {
+      const p = makeProjector([18, 12, 28], cam, 600, 400);
+      for (const [x, d] of [[0, 0], [9, 6], [-30, 75]] as const) {
+        const [sx, sy] = p.project([x, 0, d]);
+        const back = p.toFloor(sx, sy);
+        expect(back?.[0]).toBeCloseTo(x);
+        expect(back?.[1]).toBeCloseTo(d);
+      }
+    }
+  });
+
+  it("gives up when the floor is edge-on", () => {
+    expect(makeProjector([4, 4, 4], camera(0, 0), 100, 100).toFloor(50, 50)).toBeNull();
+  });
+});
+
+describe("gridSteps", () => {
+  it("keeps fine lines at least 6 pixels apart in powers of ten", () => {
+    expect(gridSteps(20, 50)).toEqual({ fine: 1, major: 10 });
+    expect(gridSteps(2, 50).fine).toBe(10);
+    expect(gridSteps(0.05, 50).fine).toBe(1000);
+  });
+
+  it("thins major lines when the visible floor is huge", () => {
+    const { major } = gridSteps(20, 5000);
+    expect((2 * 5000) / major).toBeLessThanOrEqual(240);
   });
 });
 
