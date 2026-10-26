@@ -10,6 +10,8 @@ export type InspectorTab = "parts" | "layers";
 
 interface ModelState {
   spec: VoxelSpec | null;
+  /** Names the exported file; null for an invalid spec. */
+  modelId: string | null;
   grid: VoxelGrid | null;
   issues: Issue[];
   /** Highlighted part index. */
@@ -19,7 +21,7 @@ interface ModelState {
   inspectorTab: InspectorTab;
   layerH: number;
   /** Validates and builds external JSON; an invalid shape leaves no model. */
-  loadSpec: (input: unknown) => void;
+  loadSpec: (input: unknown, id?: string) => void;
   togglePart: (index: number) => void;
   clearSelection: () => void;
   /** Turns the camera by radians; pitch stays between level and straight down. */
@@ -40,21 +42,23 @@ const initialLayer = (height: number) => Math.floor(height * 0.6);
 
 export const useModelStore = create<ModelState>((set, get) => ({
   spec: null,
+  modelId: null,
   grid: null,
   issues: [],
   selectedPart: null,
   camera: DEFAULT_CAMERA,
   inspectorTab: "parts",
   layerH: 0,
-  loadSpec: (input) => {
+  loadSpec: (input, id) => {
     const { spec, issues } = validateSpec(input);
     if (!spec) {
-      set({ spec: null, grid: null, issues, selectedPart: null, layerH: 0 });
+      set({ spec: null, modelId: null, grid: null, issues, selectedPart: null, layerH: 0 });
       return;
     }
     const grid = buildModel(spec);
     set({
       spec,
+      modelId: id ?? null,
       grid,
       issues: [...issues, ...checkGrid(spec, grid)],
       selectedPart: null,

@@ -12,7 +12,7 @@ export default function App() {
 
   useEffect(() => {
     const first = examples[0];
-    if (first) loadSpec(first.data);
+    if (first) loadSpec(first.data, first.id);
   }, [loadSpec]);
 
   return (

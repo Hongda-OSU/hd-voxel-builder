@@ -18,7 +18,7 @@ export function ExamplePanel() {
               aria-pressed={example.id === active}
               onClick={() => {
                 setActive(example.id);
-                loadSpec(example.data);
+                loadSpec(example.data, example.id);
               }}
             >
               {example.id}

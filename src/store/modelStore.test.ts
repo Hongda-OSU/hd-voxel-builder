@@ -9,6 +9,7 @@ describe("modelStore", () => {
   beforeEach(() =>
     store.setState({
       spec: null,
+      modelId: null,
       grid: null,
       issues: [],
       selectedPart: null,
@@ -23,9 +24,9 @@ describe("modelStore", () => {
   });
 
   it("loads a valid spec with its issues", () => {
-    store.getState().loadSpec(examples.find((e) => e.id === "hd")?.data);
-    const { spec, grid, issues } = store.getState();
-    expect(spec?.name).toBe("hd");
+    store.getState().loadSpec(examples.find((e) => e.id === "hd")?.data, "hd");
+    const { spec, modelId, grid, issues } = store.getState();
+    expect([spec?.name, modelId]).toEqual(["hd", "hd"]);
     expect(grid?.cells.filter(Boolean)).toHaveLength(2167);
     expect(issues.map((i) => i.kind)).toEqual(["style"]);
   });
@@ -33,9 +34,9 @@ describe("modelStore", () => {
   it("clears the model for an invalid shape", () => {
     store.getState().loadSpec(examples[0]?.data);
     store.getState().togglePart(2);
-    store.getState().loadSpec({ name: "broken" });
-    const { spec, grid, issues, selectedPart } = store.getState();
-    expect([spec, grid, selectedPart]).toEqual([null, null, null]);
+    store.getState().loadSpec({ name: "broken" }, "broken");
+    const { spec, modelId, grid, issues, selectedPart } = store.getState();
+    expect([spec, modelId, grid, selectedPart]).toEqual([null, null, null, null]);
     expect(issues.every((i) => i.kind === "schema")).toBe(true);
   });
 

@@ -2,6 +2,7 @@ import { useModelStore } from "../store/modelStore";
 import type { InspectorTab } from "../store/modelStore";
 import { IssueList } from "./IssueList";
 import { LayerPanel } from "./LayerPanel";
+import { MagicaVoxelPanel } from "./MagicaVoxelPanel";
 import { PartList } from "./PartList";
 
 const TABS: { id: InspectorTab; label: string }[] = [
@@ -37,6 +38,7 @@ export function Inspector() {
       ) : (
         <LayerPanel />
       )}
+      <MagicaVoxelPanel />
     </aside>
   );
 }
