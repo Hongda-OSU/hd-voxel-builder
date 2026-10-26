@@ -4,6 +4,9 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::thread;
+use std::time::{Duration, Instant};
 
 pub const APPLICATIONS: &str = "/Applications";
 
@@ -83,6 +86,78 @@ pub fn write_model(dir: &Path, id: &str, bytes: &[u8]) -> Result<PathBuf, String
     Ok(path)
 }
 
+pub fn is_running() -> bool {
+    Command::new("pgrep")
+        .args(["-x", "MagicaVoxel"])
+        .output()
+        .is_ok_and(|output| output.status.success())
+}
+
+/// Polls `done` every 200 ms until it holds or `timeout` passes.
+pub fn wait_until(timeout: Duration, mut done: impl FnMut() -> bool) -> bool {
+    let start = Instant::now();
+    loop {
+        if done() {
+            return true;
+        }
+        if start.elapsed() >= timeout {
+            return false;
+        }
+        thread::sleep(Duration::from_millis(200));
+    }
+}
+
+/// Runs an AppleScript, passing `args` as `argv` so they never need escaping.
+fn osascript(script: &str, args: &[&str]) -> Result<(), String> {
+    let output = Command::new("osascript")
+        .args(["-e", script])
+        .args(args)
+        .output()
+        .map_err(|error| format!("无法运行 osascript：{error}"))?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(String::from_utf8_lossy(&output.stderr).trim().to_owned())
+    }
+}
+
+/// Quits MagicaVoxel the way ⌘Q does, relaunches it so its Project list
+/// rereads the model folder, then says which entry to click.
+pub fn restart(app: &Path, stem: &str) -> Result<(), String> {
+    if is_running() {
+        osascript(r#"tell application "MagicaVoxel" to quit"#, &[])
+            .map_err(|error| format!("无法让 MagicaVoxel 退出（{error}）。请手动退出后再试。"))?;
+        if !wait_until(Duration::from_secs(10), || !is_running()) {
+            return Err("MagicaVoxel 没有退出，可能在等你处理弹窗。处理完再试。".into());
+        }
+    }
+    let launched = Command::new("open")
+        .arg(app)
+        .status()
+        .map_err(|error| format!("无法启动 MagicaVoxel：{error}"))?;
+    if !launched.success() || !wait_until(Duration::from_secs(15), is_running) {
+        return Err("MagicaVoxel 没有启动起来。".into());
+    }
+    // Let its window come up first so the alert lands on top of it.
+    thread::sleep(Duration::from_millis(1500));
+    let message = format!("在右侧 Project 列表里点「{stem}」打开。");
+    // The alert waits for a click, so it runs on its own.
+    Command::new("osascript")
+        .args([
+            "-e",
+            "on run argv",
+            "-e",
+            "display alert (item 1 of argv) message (item 2 of argv)",
+            "-e",
+            "end run",
+            "模型已送进 MagicaVoxel",
+            &message,
+        ])
+        .spawn()
+        .map_err(|error| format!("无法显示提示：{error}"))?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -148,6 +223,16 @@ mod tests {
         assert_eq!(file_name("hd-tall").as_deref(), Some("hd-tall.vox"));
         assert_eq!(file_name("篮球 v2").as_deref(), Some("v2.vox"));
         assert_eq!(file_name("篮球"), None);
+    }
+
+    #[test]
+    fn waits_until_done_or_timeout() {
+        let mut calls = 0;
+        assert!(wait_until(Duration::from_secs(5), || {
+            calls += 1;
+            calls == 3
+        }));
+        assert!(!wait_until(Duration::from_millis(300), || false));
     }
 
     #[test]
