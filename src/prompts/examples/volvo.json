@@ -1,0 +1,175 @@
+{
+  "name": "2010 Volvo V50 风格旅行车（原创体素版）",
+  "style": "object",
+  "size": [16, 40, 14],
+  "palette": {
+    "B": "#2f4a6e",
+    "G": "#1d2733",
+    "T": "#1a1a1a",
+    "H": "#b8bcc2",
+    "L": "#f2f4f6",
+    "R": "#c8202a",
+    "K": "#2a2c30",
+    "C": "#c9ccd1",
+    "D": "#3a3d42"
+  },
+  "parts": [
+    {
+      "name": "lower_body",
+      "color": "B",
+      "boxes": [
+        [1, 14, 2, 7, 1, 38]
+      ],
+      "chamfer": "all"
+    },
+    {
+      "name": "cabin",
+      "color": "G",
+      "boxes": [
+        [2, 13, 8, 12, 2, 22],
+        [2, 13, 8, 11, 23, 24],
+        [2, 13, 8, 10, 25, 26],
+        [2, 13, 8, 9, 27, 28]
+      ],
+      "chamfer": "v"
+    },
+    {
+      "name": "roof",
+      "color": "B",
+      "boxes": [
+        [2, 13, 12, 12, 3, 22]
+      ],
+      "paint": true
+    },
+    {
+      "name": "beltline",
+      "color": "B",
+      "boxes": [
+        [2, 13, 8, 8, 2, 28]
+      ],
+      "paint": true
+    },
+    {
+      "name": "rear_face",
+      "color": "B",
+      "boxes": [
+        [2, 13, 8, 12, 2, 2]
+      ],
+      "paint": true
+    },
+    {
+      "name": "rear_window",
+      "color": "G",
+      "boxes": [
+        [4, 11, 9, 11, 2, 2]
+      ],
+      "paint": true
+    },
+    {
+      "name": "b_pillar",
+      "color": "B",
+      "boxes": [
+        [2, 2, 9, 11, 13, 14]
+      ],
+      "mirrorX": true,
+      "paint": true
+    },
+    {
+      "name": "c_pillar",
+      "color": "B",
+      "boxes": [
+        [2, 2, 9, 11, 3, 4]
+      ],
+      "mirrorX": true,
+      "paint": true
+    },
+    {
+      "name": "roof_rails",
+      "color": "C",
+      "boxes": [
+        [3, 3, 13, 13, 4, 21]
+      ],
+      "mirrorX": true
+    },
+    {
+      "name": "side_mirror",
+      "color": "B",
+      "boxes": [
+        [1, 1, 8, 9, 20, 21]
+      ],
+      "mirrorX": true
+    },
+    {
+      "name": "front_bumper",
+      "color": "D",
+      "boxes": [
+        [1, 14, 2, 3, 38, 38],
+        [1, 14, 2, 2, 1, 1]
+      ],
+      "paint": true
+    },
+    {
+      "name": "grille",
+      "color": "K",
+      "boxes": [
+        [5, 10, 4, 6, 38, 38]
+      ],
+      "paint": true
+    },
+    {
+      "name": "grille_bar",
+      "color": "C",
+      "cells": [
+        [6, 4, 38],
+        [7, 5, 38],
+        [8, 5, 38],
+        [9, 6, 38]
+      ],
+      "paint": true
+    },
+    {
+      "name": "headlights",
+      "color": "L",
+      "boxes": [
+        [2, 4, 5, 6, 38, 38]
+      ],
+      "mirrorX": true,
+      "paint": true
+    },
+    {
+      "name": "taillights",
+      "color": "R",
+      "boxes": [
+        [1, 2, 4, 7, 1, 1],
+        [2, 3, 8, 10, 2, 2]
+      ],
+      "mirrorX": true,
+      "paint": true
+    },
+    {
+      "name": "wheels",
+      "color": "T",
+      "group": "wheels",
+      "mirrorX": true,
+      "boxes": [
+        [0, 1, 0, 6, 7, 9],
+        [0, 1, 1, 5, 6, 10],
+        [0, 1, 2, 4, 5, 11],
+        [0, 1, 0, 6, 30, 32],
+        [0, 1, 1, 5, 29, 33],
+        [0, 1, 2, 4, 28, 34]
+      ]
+    },
+    {
+      "name": "hubs",
+      "color": "H",
+      "group": "wheels",
+      "mirrorX": true,
+      "paint": true,
+      "boxes": [
+        [0, 0, 2, 4, 7, 9],
+        [0, 0, 2, 4, 30, 32]
+      ]
+    }
+  ]
+}

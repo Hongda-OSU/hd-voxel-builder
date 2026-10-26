@@ -1,0 +1,46 @@
+{
+  "name": "篮球",
+  "style": "object",
+  "size": [28, 28, 28],
+  "palette": {
+    "O": "#e8772e",
+    "o": "#2a1a10"
+  },
+  "parts": [
+    {
+      "name": "球体",
+      "color": "O",
+      "sphere": {
+        "x": 13.5,
+        "h": 13.5,
+        "d": 13.5,
+        "r": 13.6
+      }
+    },
+    {
+      "name": "竖缝",
+      "color": "o",
+      "boxes": [
+        [13, 14, 0, 27, 0, 27]
+      ],
+      "paint": true
+    },
+    {
+      "name": "横缝",
+      "color": "o",
+      "boxes": [
+        [0, 27, 13, 14, 0, 27]
+      ],
+      "paint": true
+    },
+    {
+      "name": "侧弧缝",
+      "color": "o",
+      "boxes": [
+        [5, 5, 0, 27, 0, 27]
+      ],
+      "paint": true,
+      "mirrorX": true
+    }
+  ]
+}
