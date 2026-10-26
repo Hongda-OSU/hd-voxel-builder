@@ -35,7 +35,7 @@ pnpm dev
 
 ```sh
 pnpm test   # Unit tests (Vitest)
-pnpm check  # TypeScript, ESLint, tests, Rust formatting, and Clippy
+pnpm check  # TypeScript, ESLint, tests, Rust formatting, Clippy, and Rust tests
 pnpm build  # Build the macOS application
 ```
 

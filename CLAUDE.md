@@ -19,7 +19,7 @@ A local macOS voxel workshop for one user: Claude writes build steps, determinis
 | Frontend only | `pnpm dev:web` |
 | All tests | `pnpm test` |
 | One test file | `pnpm test src/core/buildModel.test.ts` |
-| Types, lint, tests, Rust fmt + Clippy | `pnpm check` |
+| Types, lint, tests, Rust fmt + Clippy + tests | `pnpm check` |
 | Package the app | `pnpm build` |
 | Docs whitespace | `git diff --check` |
 
