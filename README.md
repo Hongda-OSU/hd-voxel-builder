@@ -8,12 +8,18 @@ A local macOS app that turns text descriptions and reference images into voxel m
 
 ## Features
 
+Available:
+
+- Inspect models in an orbiting 3D viewport with layer slices and part highlighting.
+- Validate models for bounds, colors, duplicate names, and floating parts.
+- Send `.vox` files to MagicaVoxel's model list, restarting it after confirmation.
+- Try generation prompts from the command line with `pnpm gen`.
+
 Planned:
 
-- Generate original chibi characters, objects, and small scenes from text, optionally drafted from reference images.
-- Inspect models in an orbiting 3D viewport with layer slices, part highlighting, and build animations.
+- Generate original chibi characters, objects, and small scenes in the app, optionally drafted from reference images.
 - Refine models through conversation, with saved versions and rollback.
-- Export `.vox` files to MagicaVoxel and reopen saved projects locally.
+- Play build animations and reopen saved projects locally.
 
 ## Tech Stack
 

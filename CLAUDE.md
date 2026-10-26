@@ -20,6 +20,7 @@ A local macOS voxel workshop for one user: Claude writes build steps, determinis
 | All tests | `pnpm test` |
 | One test file | `pnpm test src/core/buildModel.test.ts` |
 | Types, lint, tests, Rust fmt + Clippy + tests | `pnpm check` |
+| Try a prompt with Claude Code | `pnpm gen <slug> --style chibi "…"` |
 | Package the app | `pnpm build` |
 | Docs whitespace | `git diff --check` |
 
