@@ -1,13 +1,30 @@
 mod magicavoxel;
+mod settings;
 
 use std::path::{Path, PathBuf};
+
+use tauri::{AppHandle, Manager};
 
 fn find_app() -> Result<PathBuf, String> {
     magicavoxel::find_app(Path::new(magicavoxel::APPLICATIONS))
         .ok_or_else(|| "在「应用程序」里找不到 MagicaVoxel".to_owned())
 }
 
-/// MagicaVoxel's model folder, or null when the app is not in /Applications.
+fn config_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    app.path()
+        .app_config_dir()
+        .map_err(|error| format!("找不到设置目录：{error}"))
+}
+
+/// The folder models are written to: the user's override, else MagicaVoxel's own.
+fn target_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    match settings::read_model_dir(&config_dir(app)?) {
+        Some(dir) => Ok(dir),
+        None => Ok(magicavoxel::model_dir(&find_app()?)),
+    }
+}
+
+/// MagicaVoxel's own model folder, or null when the app is not in /Applications.
 #[tauri::command]
 fn magicavoxel_model_dir() -> Option<String> {
     find_app()
@@ -15,16 +32,29 @@ fn magicavoxel_model_dir() -> Option<String> {
         .map(|app| magicavoxel::model_dir(&app).display().to_string())
 }
 
+/// The folder the user chose instead, or null.
+#[tauri::command]
+fn custom_model_dir(app: AppHandle) -> Result<Option<String>, String> {
+    Ok(settings::read_model_dir(&config_dir(&app)?).map(|dir| dir.display().to_string()))
+}
+
+/// Saves a folder to write models to; null goes back to MagicaVoxel's own.
+#[tauri::command]
+fn set_custom_model_dir(app: AppHandle, dir: Option<String>) -> Result<(), String> {
+    let home = std::env::var_os("HOME").map(PathBuf::from);
+    let dir = dir.map(|dir| settings::expand_home(dir.trim(), home.as_deref()));
+    settings::write_model_dir(&config_dir(&app)?, dir.as_deref())
+}
+
 #[tauri::command]
 fn magicavoxel_running() -> bool {
     magicavoxel::is_running()
 }
 
-/// Writes the model into MagicaVoxel's model folder and returns the file name.
+/// Writes the model into the model folder and returns the file name.
 #[tauri::command]
-fn write_to_magicavoxel(id: String, bytes: Vec<u8>) -> Result<String, String> {
-    let dir = magicavoxel::model_dir(&find_app()?);
-    let path = magicavoxel::write_model(&dir, &id, &bytes)?;
+fn write_to_magicavoxel(app: AppHandle, id: String, bytes: Vec<u8>) -> Result<String, String> {
+    let path = magicavoxel::write_model(&target_dir(&app)?, &id, &bytes)?;
     Ok(path
         .file_name()
         .unwrap_or_default()
@@ -45,6 +75,8 @@ fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             magicavoxel_model_dir,
+            custom_model_dir,
+            set_custom_model_dir,
             magicavoxel_running,
             write_to_magicavoxel,
             restart_magicavoxel
