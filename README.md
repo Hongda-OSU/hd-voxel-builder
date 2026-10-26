@@ -4,7 +4,7 @@
 
 A local macOS app that turns text descriptions and reference images into voxel models, with interactive previews, conversational edits, and MagicaVoxel export.
 
-**Status:** M1 in progress. The app shows bundled example models in an orbiting 3D viewport with layer slices, part highlighting, and validation; generation, MagicaVoxel export, and storage are not implemented yet.
+**Status:** M1 complete. The app previews bundled example models in an orbiting 3D viewport with layer slices, part highlighting, and validation, and sends them to MagicaVoxel. Generation inside the app and project storage are not implemented yet.
 
 ## Features
 
@@ -24,7 +24,7 @@ Planned:
 
 ## Getting Started
 
-Requires macOS 12+, Node.js 22.12+, pnpm 12.9.1, Rust, and Xcode Command Line Tools.
+Requires macOS 12+, Node.js 22.12+, pnpm 12.9.1, Rust, and Xcode Command Line Tools. Opening models needs MagicaVoxel in `/Applications`; the app writes into its model folder, which can be changed in Settings.
 
 ```sh
 pnpm install
