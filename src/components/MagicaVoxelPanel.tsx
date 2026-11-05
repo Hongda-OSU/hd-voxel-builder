@@ -6,11 +6,12 @@ import { useModelStore } from "../store/modelStore";
 
 const stem = (file: string) => file.replace(/\.vox$/, "");
 
+/** Says what happened after a click; nothing before one. */
 function note(state: ExportStep): string {
   switch (state.step) {
     case "idle":
     case "confirm":
-      return "写进 MagicaVoxel 的模型目录，重启后在 Project 列表里打开";
+      return "";
     case "working":
       return "正在写入并重启 MagicaVoxel…";
     case "done":

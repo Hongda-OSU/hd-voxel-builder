@@ -21,7 +21,7 @@ const CLAUDE_NOTES: Partial<Record<ClaudeStatus, string>> = {
 function phaseNote(phase: GeneratePhase, now: number): string {
   switch (phase.step) {
     case "idle":
-      return "写好描述后按 ⌘↵ 生成";
+      return "";
     case "generating": {
       const seconds = Math.max(0, Math.round((now - phase.startedAt) / 1000));
       return phase.attempt === 1 ? `生成中 · ${seconds} 秒` : `校验没通过，正在重试 · ${seconds} 秒`;

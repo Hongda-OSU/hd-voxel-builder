@@ -368,6 +368,12 @@ ul {
   color: var(--error);
 }
 
+/* Status lines stay mounted for screen readers but take no room while empty. */
+.generate__note:empty,
+.export__note:empty {
+  display: none;
+}
+
 .generate__recheck {
   margin-left: 6px;
   padding: 0;
