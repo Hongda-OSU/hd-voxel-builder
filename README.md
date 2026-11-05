@@ -1,4 +1,4 @@
-<img src="src-tauri/icons/icon.png" width="128" height="128" alt="HD Voxel Builder icon">
+<img src="docs/banner.png" width="420" alt="Pixel-art voxel cube with a face, labelled hd-voxel-builder: Tauri, Rust, React, Claude Code">
 
 # HD Voxel Builder
 
