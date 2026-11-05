@@ -26,17 +26,17 @@ A local macOS voxel workshop for one user: Claude writes build steps, determinis
 
 ## Rules
 
-- Follow the implementation plan's stage order; the current stage is 5 (generation in the app and reference images).
+- Follow the implementation plan's stage order; the current stage is 5b (reference images in the app).
 - AI returns `VoxelSpec` build steps only. Keep `src/core/types.ts`, `src/prompts/tool.json`, and `src/core/spec.ts` validation in sync; type assertions do not validate external JSON.
 - Coordinates: size `[w, d, h]`, cells `[x, h, d]`, boxes `[x0, x1, h0, h1, d0, d1]`, inclusive; the front faces max `d`. Later parts overwrite earlier ones; part names are unique and stable.
-- Preserve `paint`, `mirrorX`, `chamfer`, `sphere`, and `group` semantics from the generation contract. Animated parts use `group`.
+- Preserve `paint`, `mirrorX`, `chamfer`, `sphere`, and `group` semantics; animated parts use `group`.
 - Limits: each dimension 1–64, palette ≤ 24 colors (warn above 10), ≤ 60 parts.
 - Export X = x, Y = d, Z = h, then rotate 180° around Z.
 - Keep `src/core` free of React and native APIs; keep part provenance per voxel for highlighting.
 - Code lives in `src/core`, `src/render`, `src/prompts`, `src/store`, `src/components`, and `src-tauri/src`.
 - AI calls go through Rust spawning the logged-in Claude Code: `claude -p` with `--json-schema` and `--tools ""`. The app stores no API key.
-- Projects and reference images live under `~/HDVoxel/projects/`, never in the repo.
-- Once `src/prompts` exists it is authoritative; sync the Notion copies.
+- Projects and reference images live in `~/HDVoxel/projects/`, never the repo.
+- `src/prompts` is authoritative; sync the Notion copies.
 - After code changes run affected tests and `pnpm check`; do not commit failing checks.
 - Test geometry and `.vox` contracts; verify rendering and real MagicaVoxel output by eye.
 - Atomic Conventional Commits; subject and body lines ≤ 72 chars; bodies only explain why.
@@ -46,17 +46,18 @@ A local macOS voxel workshop for one user: Claude writes build steps, determinis
 
 ## Gotchas
 
-- Vite only transpiles; type errors surface only through `tsc --noEmit` (`pnpm typecheck`).
+- Vite only transpiles; only `pnpm typecheck` (`tsc --noEmit`) reports type errors.
 - MagicaVoxel cannot open a given file: write to its `vox/` directory, ask before quitting it, restart it, and tell the user which file to click. Never automate its UI.
-- Dragging a `.vox` into MagicaVoxel imports it with the current palette; colors look wrong. Open it from the Project list.
+- Dragging a `.vox` into MagicaVoxel imports it with the current palette; open it from the Project list.
+- Dock-launched apps lack the shell `PATH`; `claude.rs` resolves `claude` via the login shell.
 
 ## Read these only when relevant
 
-- [Product specification](https://app.notion.com/p/3f560d3cf9f381cbb1f3cae5d02edb27): scope, architecture, milestones, UI.
+- [Product specification](https://app.notion.com/p/3f560d3cf9f381cbb1f3cae5d02edb27): scope, architecture, spec fields, milestones, UI.
 - [Implementation plan](https://app.notion.com/p/40060d3cf9f3818d8ff3ce07edc6f4d9): stage tasks and checkpoints; read before starting a stage.
-- [Generation contract](https://app.notion.com/p/3fa60d3cf9f38101a2d2fdf65aff3522): field details, validation feedback, prompt drafts.
+- [Generation contract](https://app.notion.com/p/3fa60d3cf9f38101a2d2fdf65aff3522): presets, validation feedback, prompt copies.
 - [Modeling lessons](https://app.notion.com/p/3f560d3cf9f381079b9af6ac5f50aa5a): before changing appearance or MagicaVoxel integration.
-- [Workflow](https://app.notion.com/p/3e460d3cf9f38059bb59c60d2c49bc0a): commit, README, and CLAUDE.md standards.
+- [Workflow](https://app.notion.com/p/3e460d3cf9f38059bb59c60d2c49bc0a): commit, README, CLAUDE.md standards.
 
 ## When unsure
 
