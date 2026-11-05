@@ -1,4 +1,4 @@
-<img src="docs/banner.png" width="420" alt="Pixel-art voxel cube with a face, labelled hd-voxel-builder: Tauri, Rust, React, Claude Code">
+<img src="docs/banner.png" width="420" alt="Pixel-art voxel cube with a face">
 
 # HD Voxel Builder
 
