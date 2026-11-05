@@ -5,8 +5,11 @@
 use std::io::{Read, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
-use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::{self, RecvTimeoutError};
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
 
 use serde_json::{Value, json};
 
@@ -17,6 +20,10 @@ const CHIBI: &str = include_str!("../../src/prompts/presets/chibi.md");
 const OBJECT: &str = include_str!("../../src/prompts/presets/object.md");
 
 pub const MODELS: [&str; 2] = ["opus", "sonnet"];
+
+/// Opus took up to 135 s for a character in stage 3; this leaves room for
+/// slow days without letting a stuck process hold the app forever.
+pub const TIMEOUT: Duration = Duration::from_secs(300);
 
 /// The process of the generation in flight, so it can be cancelled.
 static RUNNING: Mutex<Option<u32>> = Mutex::new(None);
@@ -98,7 +105,21 @@ pub fn set_style(spec: &mut Value, style: &str) {
     }
 }
 
+fn kill(pid: u32) {
+    let _ = Command::new("kill").arg(pid.to_string()).status();
+}
+
 pub fn run(claude: &Path, text: &str, style: &str, model: &str) -> Result<Value, String> {
+    run_within(claude, text, style, model, TIMEOUT)
+}
+
+fn run_within(
+    claude: &Path,
+    text: &str,
+    style: &str,
+    model: &str,
+    timeout: Duration,
+) -> Result<Value, String> {
     if !MODELS.contains(&model) {
         return Err(format!("不支持的模型「{model}」"));
     }
@@ -117,9 +138,24 @@ pub fn run(claude: &Path, text: &str, style: &str, model: &str) -> Result<Value,
         .stderr(Stdio::piped())
         .spawn()
         .map_err(|error| format!("无法启动 Claude Code：{error}"))?;
-    *running = Some(child.id());
+    let pid = child.id();
+    *running = Some(pid);
     CANCELLED.store(false, Ordering::SeqCst);
     drop(running);
+
+    // Kills the process if it is still running when the time is up; dropping
+    // `finished` after the process exits stops the watchdog.
+    let (finished, done) = mpsc::channel::<()>();
+    let timed_out = Arc::new(AtomicBool::new(false));
+    let watchdog = {
+        let timed_out = Arc::clone(&timed_out);
+        thread::spawn(move || {
+            if done.recv_timeout(timeout) == Err(RecvTimeoutError::Timeout) {
+                timed_out.store(true, Ordering::SeqCst);
+                kill(pid);
+            }
+        })
+    };
 
     let outcome = (|| {
         let mut stdin = child.stdin.take().ok_or("无法写入 Claude Code")?;
@@ -141,6 +177,16 @@ pub fn run(claude: &Path, text: &str, style: &str, model: &str) -> Result<Value,
         set_style(&mut spec, style);
         Ok(spec)
     })();
+    drop(finished);
+    let _ = watchdog.join();
+    let outcome = if timed_out.load(Ordering::SeqCst) {
+        Err(format!(
+            "超过 {} 分钟没有结果，已停止。可以换 Sonnet 或把描述写短一点再试",
+            timeout.as_secs() / 60
+        ))
+    } else {
+        outcome
+    };
     *RUNNING
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner()) = None;
@@ -154,7 +200,7 @@ pub fn cancel() {
         .unwrap_or_else(|poisoned| poisoned.into_inner());
     if let Some(pid) = *running {
         CANCELLED.store(true, Ordering::SeqCst);
-        let _ = Command::new("kill").arg(pid.to_string()).status();
+        kill(pid);
     }
 }
 
@@ -230,6 +276,38 @@ mod tests {
         let mut not_a_spec = json!("text");
         set_style(&mut not_a_spec, "chibi");
         assert_eq!(not_a_spec, "text");
+    }
+
+    /// Writes an executable stand-in for `claude` that runs `body`.
+    fn fake_claude(name: &str, body: &str) -> std::path::PathBuf {
+        use std::os::unix::fs::PermissionsExt;
+        let path =
+            std::env::temp_dir().join(format!("hd-fake-claude-{}-{name}", std::process::id()));
+        std::fs::write(&path, format!("#!/bin/sh\n{body}\n")).unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
+        path
+    }
+
+    // One test, because only one generation may run at a time.
+    #[test]
+    fn runs_claude_and_stops_it_after_the_timeout() {
+        let quick = fake_claude(
+            "quick",
+            r#"cat > /dev/null; echo '{"type":"result","is_error":false,"structured_output":{"name":"truck","style":"object"}}'"#,
+        );
+        let spec = run_within(&quick, "卡车", "chibi", "opus", Duration::from_secs(10)).unwrap();
+        assert_eq!(spec["name"], "truck");
+        assert_eq!(spec["style"], "chibi");
+
+        let stuck = fake_claude("stuck", "exec sleep 30");
+        let started = std::time::Instant::now();
+        let error =
+            run_within(&stuck, "卡车", "chibi", "opus", Duration::from_millis(300)).unwrap_err();
+        assert!(error.contains("没有结果"), "{error}");
+        assert!(started.elapsed() < Duration::from_secs(10));
+
+        let _ = std::fs::remove_file(quick);
+        let _ = std::fs::remove_file(stuck);
     }
 
     #[test]
