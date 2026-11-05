@@ -1,3 +1,4 @@
+mod claude;
 mod magicavoxel;
 mod settings;
 
@@ -46,6 +47,13 @@ fn set_custom_model_dir(app: AppHandle, dir: Option<String>) -> Result<(), Strin
     settings::write_model_dir(&config_dir(&app)?, dir.as_deref())
 }
 
+/// Whether the Claude Code CLI is installed and logged in. Runs off the main
+/// thread because it starts a login shell and the CLI.
+#[tauri::command(async)]
+fn claude_status() -> claude::Status {
+    claude::status()
+}
+
 #[tauri::command]
 fn magicavoxel_running() -> bool {
     magicavoxel::is_running()
@@ -74,6 +82,7 @@ fn restart_magicavoxel(file: String) -> Result<(), String> {
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
+            claude_status,
             magicavoxel_model_dir,
             custom_model_dir,
             set_custom_model_dir,
