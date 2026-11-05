@@ -1,4 +1,5 @@
 mod claude;
+mod generate;
 mod magicavoxel;
 mod settings;
 
@@ -54,6 +55,19 @@ fn claude_status() -> claude::Status {
     claude::status()
 }
 
+/// Asks Claude Code for a spec. The UI validates it and may call again with
+/// the problems listed in `text`. Runs off the main thread: it takes minutes.
+#[tauri::command(async)]
+fn generate(text: String, style: String, model: String) -> Result<serde_json::Value, String> {
+    let claude = claude::find().ok_or("找不到 Claude Code，请先安装并登录")?;
+    generate::run(&claude, &text, &style, &model)
+}
+
+#[tauri::command]
+fn cancel_generation() {
+    generate::cancel();
+}
+
 #[tauri::command]
 fn magicavoxel_running() -> bool {
     magicavoxel::is_running()
@@ -83,6 +97,8 @@ fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             claude_status,
+            generate,
+            cancel_generation,
             magicavoxel_model_dir,
             custom_model_dir,
             set_custom_model_dir,
