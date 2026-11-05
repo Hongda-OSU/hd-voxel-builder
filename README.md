@@ -2,52 +2,53 @@
 
 # HD Voxel Builder
 
-A local macOS app that turns text descriptions and reference images into voxel models, with interactive previews, conversational edits, and MagicaVoxel export.
-
-**Status:** M1 complete. The app previews bundled example models in an orbiting 3D viewport with layer slices, part highlighting, and validation, and sends them to MagicaVoxel. Generation inside the app and project storage are not implemented yet.
+A local macOS app that turns a short description into a voxel model with Claude, previews it in 3D, and sends it to MagicaVoxel.
 
 ## Features
 
-Available:
-
+- Generate original chibi characters and objects from a description, with Opus or Sonnet; a result that fails validation is retried once.
 - Inspect models in an orbiting 3D viewport with layer slices and part highlighting.
-- Validate models for bounds, colors, duplicate names, and floating parts.
-- Send `.vox` files to MagicaVoxel's model list, restarting it after confirmation.
-- Try generation prompts from the command line with `pnpm gen`.
-
-Planned:
-
-- Generate original chibi characters, objects, and small scenes in the app, optionally drafted from reference images.
-- Refine models through conversation, with saved versions and rollback.
-- Play build animations and reopen saved projects locally.
+- Check models for bounds, colors, duplicate names, and floating parts.
+- Send `.vox` files to MagicaVoxel's project list, restarting it after confirmation.
 
 ## Tech Stack
 
-- Desktop: Tauri 2 and Rust, which calls the logged-in Claude Code (`claude -p`) and handles native operations.
+- Desktop: Tauri 2 and Rust, which runs the logged-in Claude Code (`claude -p`) and handles files and MagicaVoxel.
 - UI: Vite, React 19, TypeScript (strict mode), Zustand, and handwritten CSS.
-- Model pipeline: custom Canvas 2D renderer, deterministic geometry, and `.vox` writer in TypeScript.
-- Storage: local project folders; no database or cloud account.
+- Model pipeline: deterministic geometry, a Canvas 2D renderer, and a `.vox` writer, all in TypeScript.
 
 ## Getting Started
 
-Requires macOS 12+, Node.js 22.12+, pnpm 12.9.1, Rust, and Xcode Command Line Tools. Opening models needs MagicaVoxel in `/Applications`; the app writes into its model folder, which can be changed in Settings.
+### Prerequisites
+
+- macOS 12+ with Xcode Command Line Tools
+- Node.js 22.12+ and pnpm 12.9.1
+- Rust
+- [Claude Code](https://claude.com/claude-code), installed and logged in; generation uses your own subscription and the app stores no API key
+- [MagicaVoxel](https://ephtracy.github.io) in `/Applications`, with the quarantine flag removed so it does not open to a black screen:
+
+  ```sh
+  xattr -dr com.apple.quarantine /Applications/MagicaVoxel-*/
+  ```
+
+### Installation
 
 ```sh
+git clone https://github.com/Hongda-OSU/hd-voxel-builder.git
+cd hd-voxel-builder
 pnpm install
-pnpm dev
 ```
 
 ## Usage
 
 ```sh
-pnpm test   # Unit tests (Vitest)
-pnpm check  # TypeScript, ESLint, tests, Rust formatting, Clippy, and Rust tests
-pnpm build  # Build the macOS application
+pnpm dev    # Run the desktop app
+pnpm build  # Build src-tauri/target/release/bundle/macos/HD Voxel Builder.app
 ```
 
-The app is built at `src-tauri/target/release/bundle/macos/HD Voxel Builder.app`. See the [product specification](https://app.notion.com/p/3f560d3cf9f381cbb1f3cae5d02edb27) for milestones.
+Pick a style, write a description, and press ⌘↵ to generate. **在 MagicaVoxel 中打开** writes the model into MagicaVoxel's model folder (change it under **设置**) and restarts MagicaVoxel; then click the file in its Project list.
 
-To try the prompts without the app, `pnpm gen` asks the logged-in Claude Code for a spec and saves it to `src/prompts/examples/<slug>-<model>.local.json`, which git ignores:
+To try prompts without the app, `pnpm gen` saves a spec to `src/prompts/examples/<slug>-<model>.local.json`, which git ignores:
 
 ```sh
 pnpm gen basketball --style object --model sonnet "一个篮球"
