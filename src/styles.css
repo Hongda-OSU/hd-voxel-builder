@@ -392,8 +392,7 @@ ul {
 }
 
 .example-list__item[aria-pressed="true"] {
-  background: var(--accent-soft);
-  box-shadow: inset 2px 0 0 var(--accent);
+  background: var(--raised-strong);
 }
 
 /* Preview */
@@ -638,8 +637,7 @@ ul {
 }
 
 .part-row[aria-pressed="true"] {
-  background: var(--accent-soft);
-  box-shadow: inset 2px 0 0 var(--accent);
+  background: var(--raised-strong);
 }
 
 .part-row__index,
