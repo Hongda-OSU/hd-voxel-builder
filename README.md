@@ -1,4 +1,4 @@
-<img src="docs/banner.png" width="420" alt="Pixel-art voxel cube with a face">
+<img src="src-tauri/icons/icon.png" width="128" height="128" alt="HD Voxel Builder icon: a smiling pixel-art voxel cube">
 
 # HD Voxel Builder
 
