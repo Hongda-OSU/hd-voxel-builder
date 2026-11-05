@@ -19,7 +19,13 @@ export function TitleBar() {
       {isTauri() && (
         <div className="title-bar__tools">
           <ModelPicker />
-          <button type="button" className="title-bar__control" aria-expanded={open} onClick={toggle}>
+          <button
+            type="button"
+            className="title-bar__control"
+            aria-expanded={open}
+            data-settings-toggle
+            onClick={toggle}
+          >
             设置
           </button>
         </div>

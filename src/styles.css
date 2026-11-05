@@ -106,8 +106,8 @@ ul {
 
 .title-bar__control {
   height: 26px;
-  padding: 0 10px;
-  border: 1px solid var(--line-strong);
+  padding: 0 8px;
+  border: 0;
   border-radius: 6px;
   background: transparent;
   color: var(--muted);
