@@ -90,18 +90,23 @@ ul {
   position: relative;
 }
 
-.title-bar > .title-bar__settings,
+.title-bar > .title-bar__tools,
 .title-bar > .settings {
   pointer-events: auto;
 }
 
-.title-bar__settings {
+.title-bar__tools {
   position: absolute;
   top: 50%;
   right: 12px;
+  display: flex;
+  gap: 6px;
+  transform: translateY(-50%);
+}
+
+.title-bar__control {
   height: 26px;
   padding: 0 10px;
-  transform: translateY(-50%);
   border: 1px solid var(--line-strong);
   border-radius: 6px;
   background: transparent;
@@ -109,10 +114,14 @@ ul {
   font-size: 12px;
 }
 
-.title-bar__settings:hover,
-.title-bar__settings[aria-expanded="true"] {
+.title-bar__control:hover:not(:disabled),
+.title-bar__control[aria-expanded="true"] {
   background: var(--hover);
   color: var(--ink);
+}
+
+.title-bar__control:disabled {
+  cursor: default;
 }
 
 /* Settings */
