@@ -1,23 +1,21 @@
 import { useEffect } from "react";
 import { isTauri } from "@tauri-apps/api/core";
-import { useExportStore } from "../store/exportStore";
+import { useExportStore, voxFileName } from "../store/exportStore";
 import type { ExportStep } from "../store/exportStore";
 import { useModelStore } from "../store/modelStore";
 
 const stem = (file: string) => file.replace(/\.vox$/, "");
 
-/** Says what happened after a click; nothing before one. */
-function note(state: ExportStep): string {
+/** The bar under the button: the file to write, then what happened to it. */
+function note(state: ExportStep, file: string | null): string {
   switch (state.step) {
     case "idle":
     case "confirm":
-      return "";
+      return file ?? "";
     case "working":
       return "正在写入并重启 MagicaVoxel…";
     case "done":
-      return state.restarted
-        ? `已重启 MagicaVoxel，在 Project 列表里点「${stem(state.file)}」`
-        : `已写入 ${state.file}，MagicaVoxel 下次启动时会出现在 Project 列表里`;
+      return state.restarted ? `在 Project 列表里点「${stem(state.file)}」` : `已写入 ${state.file}，下次启动时出现`;
     case "error":
       return state.message;
   }
@@ -30,6 +28,7 @@ export function MagicaVoxelPanel() {
   const state = useExportStore((store) => store.state);
   const { send, restart, keep, reset } = useExportStore.getState();
   const native = isTauri();
+  const text = native ? note(state, modelId ? voxFileName(modelId) : null) : "只能在桌面 app 里使用";
 
   // A message about the previous model would be misleading.
   useEffect(() => reset(), [modelId, reset]);
@@ -45,16 +44,18 @@ export function MagicaVoxelPanel() {
 
   return (
     <div className="export">
-      <button
-        type="button"
-        className="export__button"
-        disabled={!native || !spec || !modelId || state.step === "working"}
-        onClick={() => void send()}
-      >
-        在 MagicaVoxel 中打开
-      </button>
-      <p className={state.step === "error" ? "export__note export__note--error" : "export__note"} role="status">
-        {native ? note(state) : "只能在桌面 app 里使用"}
+      <div className="export__action">
+        <button
+          type="button"
+          className="export__button"
+          disabled={!native || !spec || !modelId || state.step === "working"}
+          onClick={() => void send()}
+        >
+          在 MagicaVoxel 中打开
+        </button>
+      </div>
+      <p className={state.step === "error" ? "export__bar export__bar--error" : "export__bar"} role="status" title={text}>
+        {text}
       </p>
       {state.step === "confirm" && (
         <div className="modal">

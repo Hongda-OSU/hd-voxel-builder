@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { examples } from "../prompts/examples";
-import { useExportStore } from "./exportStore";
+import { useExportStore, voxFileName } from "./exportStore";
 import { useModelStore } from "./modelStore";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
@@ -73,5 +73,14 @@ describe("exportStore", () => {
     useModelStore.getState().loadSpec({ name: "broken" });
     await store.getState().send();
     expect(mocked).not.toHaveBeenCalled();
+  });
+});
+
+describe("voxFileName", () => {
+  it("matches the names the native side writes", () => {
+    expect(voxFileName("basketball")).toBe("basketball.vox");
+    expect(voxFileName("model-1105-1043")).toBe("model-1105-1043.vox");
+    expect(voxFileName("hero.local")).toBe("hero-local.vox");
+    expect(voxFileName("篮球")).toBeNull();
   });
 });

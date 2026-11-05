@@ -3,6 +3,12 @@ import { create } from "zustand";
 import { writeVox } from "../core/voxFile";
 import { useModelStore } from "./modelStore";
 
+/** The file name the native side writes for a model id; keep in step with magicavoxel.rs. */
+export function voxFileName(id: string): string | null {
+  const stem = id.replace(/[^A-Za-z0-9_-]/g, "-").replace(/^-+|-+$/g, "");
+  return stem ? `${stem}.vox` : null;
+}
+
 export type ExportStep =
   | { step: "idle" }
   | { step: "working" }

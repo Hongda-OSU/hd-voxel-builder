@@ -369,8 +369,7 @@ ul {
 }
 
 /* Status lines stay mounted for screen readers but take no room while empty. */
-.generate__note:empty,
-.export__note:empty {
+.generate__note:empty {
   display: none;
 }
 
@@ -533,9 +532,32 @@ ul {
   flex: none;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 16px 14px;
+}
+
+.export__action {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 16px 12px;
+}
+
+/* Same height and top line as the viewport's status bar, so the window's bottom edge is one line. */
+.export__bar {
+  height: 30px;
+  margin: 0;
+  padding: 0 16px;
   border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 29px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.export__bar--error {
+  color: var(--error);
 }
 
 /* The primary button: a solid grey that matches selected rows; the accent stays for small marks. */
@@ -558,17 +580,7 @@ ul {
   cursor: default;
 }
 
-.export__note {
-  margin: 0;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.5;
-  text-align: center;
-}
 
-.export__note--error {
-  color: var(--error);
-}
 
 .modal {
   position: fixed;
