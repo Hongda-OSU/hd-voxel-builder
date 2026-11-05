@@ -690,11 +690,6 @@ ul {
   padding-bottom: 12px;
 }
 
-.issues__none {
-  margin: 0 16px;
-  color: var(--muted);
-}
-
 .issues__list {
   display: flex;
   flex-direction: column;
