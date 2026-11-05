@@ -7,6 +7,7 @@
   --stage: #161a21;
   --raised: #1b222b;
   --raised-strong: #2a323d;
+  --raised-hover: #343e4b;
   --ink: #e6ebf0;
   --muted: #8f99a4;
   --line: rgba(214, 226, 238, 0.1);
@@ -20,7 +21,6 @@
   --slice-outline: rgba(255, 255, 255, 0.16);
   --accent-soft: rgba(62, 232, 255, 0.1);
   --accent: #3ee8ff;
-  --accent-ink: #06181c;
   --warn: #f5b74a;
   --error: #ff7a6b;
 }

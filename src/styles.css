@@ -361,6 +361,7 @@ ul {
   color: var(--muted);
   font-size: 11px;
   line-height: 1.5;
+  text-align: center;
 }
 
 .generate__note--error {
@@ -531,19 +532,23 @@ ul {
   border-top: 1px solid var(--line);
 }
 
+/* The primary button: a solid grey that matches selected rows; the accent stays for small marks. */
 .export__button {
   height: 34px;
   padding: 0 14px;
   border: 0;
   border-radius: 8px;
-  background: var(--accent);
-  color: var(--accent-ink);
+  background: var(--raised-strong);
+  color: var(--ink);
   font-weight: 600;
 }
 
+.export__button:hover:not(:disabled) {
+  background: var(--raised-hover);
+}
+
 .export__button:disabled {
-  background: var(--raised-strong);
-  color: var(--muted);
+  opacity: 0.4;
   cursor: default;
 }
 
@@ -552,6 +557,7 @@ ul {
   color: var(--muted);
   font-size: 11px;
   line-height: 1.5;
+  text-align: center;
 }
 
 .export__note--error {
