@@ -615,14 +615,6 @@ ul {
   flex-direction: column;
 }
 
-.part-list__hint {
-  margin: 0;
-  padding: 10px 16px 6px;
-  color: var(--muted);
-  font-size: 11px;
-  text-align: right;
-}
-
 .part-list__items {
   flex: 1;
   overflow: auto;

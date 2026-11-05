@@ -19,7 +19,6 @@ export function PartList() {
 
   return (
     <div className="part-list">
-      <p className="part-list__hint">点一下只看这一步</p>
       <ol className="part-list__items" aria-label="部件">
         {spec?.parts.map((part, index) => (
           <li key={part.name}>
