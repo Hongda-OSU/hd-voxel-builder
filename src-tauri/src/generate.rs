@@ -28,8 +28,10 @@ pub fn system_prompt(style: &str) -> Result<String, String> {
         "object" => OBJECT,
         _ => return Err(format!("还没有「{style}」的风格预设")),
     };
+    // The UI's choice decides the preset, so the spec must carry the same style.
+    let preset = format!("{}\nSet \"style\" to \"{style}\".", preset.trim());
     Ok(SYSTEM
-        .replace("{{STYLE_PRESET}}", preset.trim())
+        .replace("{{STYLE_PRESET}}", &preset)
         .replace("{{EXAMPLE_SPEC}}", EXAMPLE.trim()))
 }
 
@@ -89,6 +91,13 @@ pub fn parse_output(output: &str) -> Result<Value, String> {
         .ok_or_else(|| "Claude Code 的回答里没有 spec".to_owned())
 }
 
+/// Records the preset that was actually used, whatever style Claude wrote.
+pub fn set_style(spec: &mut Value, style: &str) {
+    if let Some(spec) = spec.as_object_mut() {
+        spec.insert("style".into(), style.into());
+    }
+}
+
 pub fn run(claude: &Path, text: &str, style: &str, model: &str) -> Result<Value, String> {
     if !MODELS.contains(&model) {
         return Err(format!("不支持的模型「{model}」"));
@@ -128,7 +137,9 @@ pub fn run(claude: &Path, text: &str, style: &str, model: &str) -> Result<Value,
         if CANCELLED.load(Ordering::SeqCst) {
             return Err("已取消".to_owned());
         }
-        parse_output(&output)
+        let mut spec = parse_output(&output)?;
+        set_style(&mut spec, style);
+        Ok(spec)
     })();
     *RUNNING
         .lock()
@@ -155,6 +166,7 @@ mod tests {
     fn builds_the_system_prompt_from_the_repo_files() {
         let prompt = system_prompt("chibi").unwrap();
         assert!(prompt.contains("Style preset: chibi character."));
+        assert!(prompt.contains(r#"Set "style" to "chibi"."#));
         assert!(prompt.contains(r#""name": "hd""#));
         assert!(!prompt.contains("{{"));
         assert!(
@@ -208,6 +220,16 @@ mod tests {
         assert!(parse_output("not json").is_err());
         let prose = r#"{"type":"result","is_error":false,"result":"Sure!"}"#;
         assert!(parse_output(prose).is_err());
+    }
+
+    #[test]
+    fn overwrites_the_style_claude_wrote() {
+        let mut spec = json!({ "name": "truck", "style": "object" });
+        set_style(&mut spec, "chibi");
+        assert_eq!(spec["style"], "chibi");
+        let mut not_a_spec = json!("text");
+        set_style(&mut not_a_spec, "chibi");
+        assert_eq!(not_a_spec, "text");
     }
 
     #[test]
