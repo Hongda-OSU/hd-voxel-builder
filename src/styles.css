@@ -626,10 +626,73 @@ ul {
   flex-direction: column;
 }
 
+.part-list__heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.part-list__total {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
 .part-list__items {
   flex: 1;
   overflow: auto;
   padding: 0 8px 8px;
+}
+
+.part-list__group {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.part-group + .part-group {
+  margin-top: 6px;
+}
+
+.part-group__head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.part-group__head:hover {
+  color: var(--ink);
+}
+
+.part-group__chevron {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
+.part-group__head[aria-expanded="false"] .part-group__chevron {
+  transform: rotate(-90deg);
+}
+
+.part-group__hint {
+  font-weight: 400;
+}
+
+.part-group__count {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-weight: 400;
 }
 
 .part-row {
@@ -637,7 +700,7 @@ ul {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 7px 8px;
+  padding: 5px 8px;
   border: 0;
   border-radius: 6px;
   background: transparent;
@@ -652,18 +715,6 @@ ul {
   background: var(--raised-strong);
 }
 
-.part-row__index,
-.part-row__count {
-  color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: 11px;
-}
-
-.part-row__index {
-  width: 20px;
-  text-align: right;
-}
-
 .part-row__swatch {
   width: 12px;
   height: 12px;
@@ -672,24 +723,37 @@ ul {
   border-radius: 3px;
 }
 
-.part-row__text {
+.part-row__name {
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.part-row__name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.part-row__tags {
-  min-height: 1em;
+.part-row__marks {
+  flex: none;
+  display: flex;
+  gap: 3px;
+}
+
+.part-row__mark {
+  min-width: 16px;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: var(--stage);
   color: var(--muted);
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.part-row__count {
+  color: var(--muted);
+  font-family: var(--font-mono);
   font-size: 11px;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Issues */

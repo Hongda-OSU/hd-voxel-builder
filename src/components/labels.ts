@@ -15,13 +15,13 @@ export const PRESET_LABELS: { id: PresetId; label: string; aria: string }[] = [
   { id: "top", label: "顶", aria: "顶视图" },
 ];
 
-export function partTags(part: Part): string {
-  const tags: string[] = [];
-  if (part.sphere) tags.push("球体");
-  if (part.chamfer === "all") tags.push("去棱");
-  if (part.chamfer === "v") tags.push("去竖棱");
-  if (part.mirrorX) tags.push("镜像");
-  if (part.paint) tags.push("只涂色");
-  if (part.group) tags.push(`分组 ${part.group}`);
-  return tags.join(" · ");
+/** One-character marks for a part's build options; the group shows as a section instead. */
+export function partMarks(part: Part): { mark: string; label: string }[] {
+  const marks: { mark: string; label: string }[] = [];
+  if (part.sphere) marks.push({ mark: "球", label: "球体" });
+  if (part.chamfer === "all") marks.push({ mark: "棱", label: "去掉 12 条棱" });
+  if (part.chamfer === "v") marks.push({ mark: "竖", label: "去掉 4 条竖棱" });
+  if (part.mirrorX) marks.push({ mark: "镜", label: "左右镜像" });
+  if (part.paint) marks.push({ mark: "涂", label: "只涂色，不加方块" });
+  return marks;
 }

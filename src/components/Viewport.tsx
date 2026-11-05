@@ -97,7 +97,8 @@ export function Viewport() {
   };
 
   let viewLabel = `方位 ${degrees(camera.yaw)}° · 俯角 ${degrees(camera.pitch)}° · ${Math.round(camera.zoom * 100)}%`;
-  if (selectedPart !== null) viewLabel += ` · 只看第 ${selectedPart + 1} 步`;
+  const selectedName = selectedPart === null ? undefined : spec?.parts[selectedPart]?.name;
+  if (selectedName) viewLabel += ` · 只看「${selectedName}」`;
 
   return (
     <div className="preview">
