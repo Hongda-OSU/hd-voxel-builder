@@ -6,8 +6,6 @@ import type { VoxelGrid, VoxelSpec } from "../core/types";
 import { DEFAULT_CAMERA, VIEW_PRESETS, clampPitch, clampZoom } from "../render/viewport";
 import type { Camera, PresetId } from "../render/viewport";
 
-export type InspectorTab = "parts" | "layers";
-
 interface ModelState {
   spec: VoxelSpec | null;
   /** Names the exported file; null for an invalid spec. */
@@ -17,9 +15,6 @@ interface ModelState {
   /** Highlighted part index. */
   selectedPart: number | null;
   camera: Camera;
-  /** The layers tab also cuts the viewport above layerH. */
-  inspectorTab: InspectorTab;
-  layerH: number;
   /** Validates and builds external JSON; an invalid shape leaves no model. */
   loadSpec: (input: unknown, id?: string) => void;
   togglePart: (index: number) => void;
@@ -31,28 +26,19 @@ interface ModelState {
   zoomBy: (factor: number) => void;
   setView: (preset: PresetId) => void;
   resetCamera: () => void;
-  setInspectorTab: (tab: InspectorTab) => void;
-  /** Clamped to the model's height. */
-  setLayer: (h: number) => void;
-  stepLayer: (delta: 1 | -1) => void;
 }
 
-// Opens the layer view a little above the middle, around a chibi's eyes.
-const initialLayer = (height: number) => Math.floor(height * 0.6);
-
-export const useModelStore = create<ModelState>((set, get) => ({
+export const useModelStore = create<ModelState>((set) => ({
   spec: null,
   modelId: null,
   grid: null,
   issues: [],
   selectedPart: null,
   camera: DEFAULT_CAMERA,
-  inspectorTab: "parts",
-  layerH: 0,
   loadSpec: (input, id) => {
     const { spec, issues } = validateSpec(input);
     if (!spec) {
-      set({ spec: null, modelId: null, grid: null, issues, selectedPart: null, layerH: 0 });
+      set({ spec: null, modelId: null, grid: null, issues, selectedPart: null });
       return;
     }
     const grid = buildModel(spec);
@@ -62,7 +48,6 @@ export const useModelStore = create<ModelState>((set, get) => ({
       grid,
       issues: [...issues, ...checkGrid(spec, grid)],
       selectedPart: null,
-      layerH: initialLayer(spec.size[2]),
     });
   },
   togglePart: (index) => set((state) => ({ selectedPart: state.selectedPart === index ? null : index })),
@@ -73,11 +58,4 @@ export const useModelStore = create<ModelState>((set, get) => ({
   zoomBy: (factor) => set(({ camera }) => ({ camera: { ...camera, zoom: clampZoom(camera.zoom * factor) } })),
   setView: (preset) => set(({ camera }) => ({ camera: { ...camera, ...VIEW_PRESETS[preset] } })),
   resetCamera: () => set({ camera: DEFAULT_CAMERA }),
-  setInspectorTab: (tab) => set({ inspectorTab: tab }),
-  setLayer: (h) =>
-    set(({ spec }) => {
-      const top = (spec?.size[2] ?? 1) - 1;
-      return { layerH: Math.max(0, Math.min(top, Math.round(h))) };
-    }),
-  stepLayer: (delta) => get().setLayer(get().layerH + delta),
 }));

@@ -27,8 +27,6 @@ export function Viewport() {
   const grid = useModelStore((state) => state.grid);
   const camera = useModelStore((state) => state.camera);
   const selectedPart = useModelStore((state) => state.selectedPart);
-  const inspectorTab = useModelStore((state) => state.inspectorTab);
-  const layerH = useModelStore((state) => state.layerH);
   const { orbit, pan, setView, resetCamera, clearSelection } = useModelStore.getState();
 
   const areaRef = useRef<HTMLDivElement>(null);
@@ -36,8 +34,7 @@ export function Viewport() {
   const drag = useRef<{ x: number; y: number; pan: boolean } | null>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
 
-  const maxH = inspectorTab === "layers" ? layerH : null;
-  const faces = useMemo(() => (grid ? extractFaces(grid, { revealUpTo: null, maxH }) : []), [grid, maxH]);
+  const faces = useMemo(() => (grid ? extractFaces(grid) : []), [grid]);
 
   useEffect(() => {
     const area = areaRef.current;
@@ -101,7 +98,6 @@ export function Viewport() {
 
   let viewLabel = `方位 ${degrees(camera.yaw)}° · 俯角 ${degrees(camera.pitch)}° · ${Math.round(camera.zoom * 100)}%`;
   if (selectedPart !== null) viewLabel += ` · 只看第 ${selectedPart + 1} 步`;
-  if (maxH !== null) viewLabel += ` · 剖到 h = ${maxH}`;
 
   return (
     <div className="preview">

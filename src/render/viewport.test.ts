@@ -20,20 +20,13 @@ describe("extractFaces", () => {
     expect(extractFaces(grid([{ name: "a", color: "A", cells: [[1, 1, 1], [2, 1, 1]] }]))).toHaveLength(10);
   });
 
-  it("exposes the cut layer's top when clipping with maxH", () => {
-    const column = grid([{ name: "a", color: "A", boxes: [[1, 1, 0, 2, 1, 1]] }]);
-    expect(extractFaces(column)).toHaveLength(14);
-    const clipped = extractFaces(column, { revealUpTo: null, maxH: 0 });
-    expect(clipped).toHaveLength(6);
-    expect(clipped.some((f) => f.normal[1] === 1 && f.center[1] === 1)).toBe(true);
-  });
 
   it("hides later parts with revealUpTo", () => {
     const g = grid([
       { name: "a", color: "A", cells: [[0, 0, 0]] },
       { name: "b", color: "A", cells: [[3, 3, 3]] },
     ]);
-    expect(extractFaces(g, { revealUpTo: 0, maxH: null }).every((f) => f.part === 0)).toBe(true);
+    expect(extractFaces(g, { revealUpTo: 0 }).every((f) => f.part === 0)).toBe(true);
   });
 
   it("darkens faces with occluding neighbours", () => {

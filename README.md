@@ -7,7 +7,7 @@ A local macOS app that turns a short description into a voxel model with Claude,
 ## Features
 
 - Generate original chibi characters and objects from a description, with Opus or Sonnet; a result that fails validation is retried once.
-- Inspect models in an orbiting 3D viewport with layer slices and part highlighting.
+- Inspect models in an orbiting 3D viewport with part highlighting.
 - Check models for bounds, colors, duplicate names, and floating parts.
 - Send `.vox` files to MagicaVoxel's project list, restarting it after confirmation.
 

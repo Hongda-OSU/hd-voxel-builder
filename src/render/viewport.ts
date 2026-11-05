@@ -18,8 +18,6 @@ export interface Face {
 export interface FaceFilter {
   /** Hide parts after this index (build animation). */
   revealUpTo: number | null;
-  /** Hide voxels above this height (layer view). */
-  maxH: number | null;
 }
 
 type Axis = 0 | 1 | 2;
@@ -34,11 +32,10 @@ const LIGHT: Vec3 = (() => {
 })();
 
 /** Faces with no visible neighbour; recompute only when the model or filter changes. */
-export function extractFaces(grid: VoxelGrid, filter: FaceFilter = { revealUpTo: null, maxH: null }): Face[] {
+export function extractFaces(grid: VoxelGrid, filter: FaceFilter = { revealUpTo: null }): Face[] {
   const [w, depth] = grid.size;
   const shown = (x: number, h: number, d: number) => {
     if (!inBounds(grid.size, x, h, d)) return false;
-    if (filter.maxH !== null && h > filter.maxH) return false;
     const voxel = grid.cells[cellIndex(grid.size, x, h, d)];
     return voxel !== undefined && (filter.revealUpTo === null || voxel.part <= filter.revealUpTo);
   };
