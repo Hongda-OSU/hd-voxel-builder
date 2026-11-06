@@ -179,4 +179,19 @@ describe("projectStore", () => {
     // The first starter is the newest, so it heads the list.
     expect(Date.parse(projects[0]!.updatedAt)).toBeGreaterThan(Date.parse(projects[1]!.updatedAt));
   });
+
+  it("keeps a project opened while an older list read was on its way", async () => {
+    const project = createProject("20261106-1117", "generate", { spec: basketball, prompt: "" }, startedAt);
+    let release: (value: ProjectSummary[]) => void = () => {};
+    mocked.mockImplementation(async (command: string) => {
+      if (command === "list_projects") return new Promise<ProjectSummary[]>((resolve) => (release = resolve));
+      if (command === "load_project") return JSON.parse(JSON.stringify(project)) as unknown;
+      return undefined;
+    });
+    const stale = store.getState().refresh();
+    await store.getState().open(project.id);
+    release([]);
+    await stale;
+    expect(store.getState().project?.id).toBe(project.id);
+  });
 });

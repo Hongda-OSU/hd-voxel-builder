@@ -66,9 +66,12 @@ function show(project: Project): void {
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => {
+  // Counts project switches, so a list read that started before one cannot undo it.
+  let switches = 0;
 
   /** Shows a changed project at once, then saves it; a failed save keeps it on screen. */
   const commit = async (project: Project, failure: string) => {
+    switches++;
     set({ project });
     show(project);
     try {
@@ -86,10 +89,13 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     error: null,
     refresh: async () => {
       try {
+        const before = switches;
         const projects = await invoke<ProjectSummary[]>("list_projects");
-        // A project removed outside the app (say, in Finder) is no longer open.
+        // A project removed outside the app (say, in Finder) is no longer open; a read
+        // that began before the current project was opened says nothing about it.
         const open = get().project;
-        const gone = open !== null && !projects.some((summary) => summary.id === open.id);
+        const gone =
+          before === switches && open !== null && !projects.some((summary) => summary.id === open.id);
         set({ projects: [...projects].sort(newestFirst), error: null, ...(gone ? { project: null } : {}) });
       } catch (error) {
         set({ error: String(error) });
@@ -99,6 +105,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       try {
         const project = parseProject(await invoke<unknown>("load_project", { id }));
         if (!project) throw new Error(`作品「${id}」的 project.json 格式不对，打不开`);
+        switches++;
         set({ project, error: null });
         show(project);
       } catch (error) {
@@ -110,17 +117,8 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     },
     createFromGeneration: async (input, startedAt) => {
       const id = projectId(startedAt, get().projects.map((summary) => summary.id));
-      const project = createProject(id, "generate", input, new Date());
-      // Show it first: a failed save must not hide what was just generated.
-      set({ project });
-      show(project);
-      try {
-        await save(project);
-        set({ error: null });
-        await get().refresh();
-      } catch (error) {
-        set({ error: `生成好了，但没存下来：${String(error)}` });
-      }
+      // Shown first: a failed save must not hide what was just generated.
+      await commit(createProject(id, "generate", input, new Date()), "生成好了，但没存下来");
     },
     addStarters: async () => {
       const now = Date.now();
