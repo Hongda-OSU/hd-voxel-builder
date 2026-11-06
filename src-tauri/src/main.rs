@@ -1,6 +1,7 @@
 mod claude;
 mod generate;
 mod magicavoxel;
+mod projects;
 mod settings;
 
 use std::path::{Path, PathBuf};
@@ -25,6 +26,29 @@ fn target_dir(app: &AppHandle) -> Result<PathBuf, String> {
         Some(dir) => Ok(dir),
         None => Ok(magicavoxel::model_dir(&find_app()?)),
     }
+}
+
+fn projects_root() -> Result<PathBuf, String> {
+    let home = std::env::var_os("HOME").map(PathBuf::from);
+    projects::root(home.as_deref()).ok_or_else(|| "找不到用户目录".to_owned())
+}
+
+/// Every saved project, unsorted; the UI orders them by updatedAt.
+#[tauri::command(async)]
+fn list_projects() -> Result<Vec<projects::Summary>, String> {
+    Ok(projects::list(&projects_root()?))
+}
+
+/// One project's full project.json, for the UI to validate.
+#[tauri::command(async)]
+fn load_project(id: String) -> Result<serde_json::Value, String> {
+    projects::load(&projects_root()?, &id)
+}
+
+/// Saves project.json and the current version's .vox.
+#[tauri::command(async)]
+fn save_project(id: String, project: serde_json::Value, vox: Vec<u8>) -> Result<(), String> {
+    projects::save(&projects_root()?, &id, &project, &vox)
 }
 
 /// MagicaVoxel's own model folder, or null when the app is not in /Applications.
@@ -123,7 +147,10 @@ fn main() {
             set_custom_model_dir,
             magicavoxel_running,
             write_to_magicavoxel,
-            restart_magicavoxel
+            restart_magicavoxel,
+            list_projects,
+            load_project,
+            save_project
         ])
         .run(tauri::generate_context!())
         .expect("failed to run HD Voxel Builder");
