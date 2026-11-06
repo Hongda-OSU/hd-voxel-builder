@@ -4,7 +4,7 @@ import { useGenerateStore } from "../store/generateStore";
 import { useProjectStore } from "../store/projectStore";
 import { STYLE_LABELS } from "./labels";
 
-const KIND_LABELS: Record<Version["kind"], string> = { generate: "生成", edit: "修改", example: "示例" };
+const KIND_LABELS: Record<Version["kind"], string> = { generate: "生成", edit: "修改", example: "自带" };
 const MODEL_LABELS = { opus: "Opus", sonnet: "Sonnet" } as const;
 /** Long change lists wrap badly in a 260px column; the rest collapses into "+N". */
 const MAX_CHIPS = 6;
@@ -89,7 +89,7 @@ export function ProjectView({ project }: { project: Project }) {
                 <span>{versionLine(version)}</span>
               </span>
               <span className="version__prompt">
-                {version.prompt || (project.from ? `从示例「${project.from}」复制` : "（没有描述）")}
+                {version.prompt || (version.kind === "example" ? "app 自带的作品" : "（没有描述）")}
               </span>
               <span className="version__changes">
                 <Changes version={version} />

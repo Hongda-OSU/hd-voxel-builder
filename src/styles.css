@@ -267,10 +267,6 @@ ul {
   overflow: auto;
 }
 
-.example-list {
-  padding: 0 8px 8px;
-}
-
 /* Open project: title and versions */
 
 .project-head {
@@ -427,7 +423,14 @@ ul {
   }
 }
 
-/* Recent projects, above the examples */
+/* Recent projects */
+
+.recent__empty {
+  margin: 0;
+  padding: 16px;
+  color: var(--muted);
+  line-height: 1.6;
+}
 
 .recent__heading {
   display: flex;
@@ -703,23 +706,8 @@ ul {
   outline-offset: 1px;
 }
 
-.example-list__item {
-  width: 100%;
-  padding: 8px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  text-align: left;
-  font-family: var(--font-mono);
-}
 
-.example-list__item:hover {
-  background: var(--hover);
-}
 
-.example-list__item[aria-pressed="true"] {
-  background: var(--raised-strong);
-}
 
 /* Preview */
 

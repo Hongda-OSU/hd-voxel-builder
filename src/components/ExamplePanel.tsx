@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { mainColor } from "../core/project";
-import { examples } from "../prompts/examples";
-import { useModelStore } from "../store/modelStore";
 import { useProjectStore } from "../store/projectStore";
 import type { ProjectSummary } from "../store/projectStore";
 import { GeneratePanel } from "./GeneratePanel";
@@ -36,7 +34,9 @@ function RecentList() {
     return () => window.removeEventListener("keydown", onKey);
   }, [pending]);
 
-  if (projects.length === 0) return null;
+  if (projects.length === 0) {
+    return <p className="recent__empty">还没有作品。在下面描述一个新模型。</p>;
+  }
   const now = new Date();
 
   return (
@@ -107,44 +107,13 @@ function RecentList() {
   );
 }
 
+/** The left column: the projects, or the open project's versions, above the composer. */
 export function ExamplePanel() {
-  const loadSpec = useModelStore((state) => state.loadSpec);
   const project = useProjectStore((state) => state.project);
-  const openId = project?.id;
-  // A generated model has its own id, so no example stays highlighted.
-  const modelId = useModelStore((state) => state.modelId);
 
   return (
-    <section className="panel panel--left" aria-label="作品与示例">
-      <div className="left-scroll">
-        {project ? (
-          <ProjectView project={project} />
-        ) : (
-          <>
-            <RecentList />
-            <h2 className="panel__heading" id="examples-heading">
-              示例
-            </h2>
-            <ul className="example-list" aria-labelledby="examples-heading">
-              {examples.map((example) => (
-                <li key={example.id}>
-                  <button
-                    type="button"
-                    className="example-list__item"
-                    aria-pressed={openId === undefined && example.id === modelId}
-                    onClick={() => {
-                      useProjectStore.getState().close();
-                      loadSpec(example.data, example.id);
-                    }}
-                  >
-                    {example.id}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </div>
+    <section className="panel panel--left" aria-label="作品">
+      <div className="left-scroll">{project ? <ProjectView project={project} /> : <RecentList />}</div>
       <GeneratePanel />
     </section>
   );
