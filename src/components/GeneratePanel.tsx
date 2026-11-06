@@ -24,12 +24,13 @@ function phaseNote(phase: GeneratePhase, now: number, shownId: string | null): s
       return "";
     case "generating": {
       const seconds = Math.max(0, Math.round((now - phase.startedAt) / 1000));
-      return phase.attempt === 1 ? `生成中 · ${seconds} 秒` : `校验没通过，正在重试 · ${seconds} 秒`;
+      const verb = phase.editing ? "修改中" : "生成中";
+      return phase.attempt === 1 ? `${verb} · ${seconds} 秒` : `校验没通过，正在重试 · ${seconds} 秒`;
     }
     case "done":
       // Only while its result is on screen; after switching models it would mislead.
       if (phase.id !== shownId) return "";
-      return phase.retried ? `生成完成，用了 ${phase.seconds} 秒（重试了 1 次）` : `生成完成，用了 ${phase.seconds} 秒`;
+      return `${phase.editing ? "修改" : "生成"}完成，用了 ${phase.seconds} 秒${phase.retried ? "（重试了 1 次）" : ""}`;
     case "error":
       return phase.message;
   }
@@ -40,6 +41,9 @@ export function GeneratePanel() {
   const { style, description, claude, phase } = useGenerateStore();
   const { setStyle, setDescription, checkClaude, generate, cancel } = useGenerateStore.getState();
   const projectError = useProjectStore((state) => state.error);
+  // With a project open the composer writes edits to its current version.
+  const project = useProjectStore((state) => state.project);
+  const latest = project ? Math.max(...project.versions.map((version) => version.n)) : 0;
   const shownId = useModelStore((state) => state.modelId);
   const native = isTauri();
   const generating = phase.step === "generating";
@@ -56,11 +60,12 @@ export function GeneratePanel() {
     return () => window.clearInterval(timer);
   }, [generating]);
 
-  const ready = native && claude === "ready" && style !== "diorama";
+  const activeStyle = project?.style ?? style;
+  const ready = native && claude === "ready" && activeStyle !== "diorama";
   const canGenerate = ready && !generating && description.trim() !== "";
   const blocked = !native
     ? "只能在桌面 app 里生成"
-    : (CLAUDE_NOTES[claude] ?? (style === "diorama" ? "还没有「场景小件」的风格预设" : undefined));
+    : (CLAUDE_NOTES[claude] ?? (activeStyle === "diorama" ? "还没有「场景小件」的风格预设" : undefined));
   // A failed save or open outranks the generation note: the model on screen is not on disk.
   const status = blocked ?? projectError ?? phaseNote(phase, now, shownId);
   const isError = Boolean(blocked) || Boolean(projectError) || phase.step === "error";
@@ -80,8 +85,8 @@ export function GeneratePanel() {
           className="composer__text"
           value={description}
           rows={3}
-          aria-label="描述"
-          placeholder="描述一个新模型……"
+          aria-label={project ? "修改指令" : "描述"}
+          placeholder={project ? "说要改什么，比如「车斗再长两格」" : "描述一个新模型……"}
           disabled={generating}
           onChange={(event) => setDescription(event.target.value)}
           onKeyDown={(event) => {
@@ -89,25 +94,32 @@ export function GeneratePanel() {
           }}
         />
         <div className="composer__bar">
-          <div className="composer__styles" role="radiogroup" aria-label="风格">
-            {STYLE_OPTIONS.map(({ id, label, note }) => (
-              <button
-                key={id}
-                type="button"
-                role="radio"
-                className="composer__pill"
-                aria-checked={style === id}
-                title={note}
-                disabled={generating}
-                onClick={() => setStyle(id)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          {project ? (
+            // Warns when an older version is shown: the edit starts from it, not from the latest.
+            <span className={project.current === latest ? "composer__base" : "composer__base composer__base--older"}>
+              在 v{project.current} 上修改
+            </span>
+          ) : (
+            <div className="composer__styles" role="radiogroup" aria-label="风格">
+              {STYLE_OPTIONS.map(({ id, label, note }) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="radio"
+                  className="composer__pill"
+                  aria-checked={style === id}
+                  title={note}
+                  disabled={generating}
+                  onClick={() => setStyle(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
           {native && <ModelPicker />}
           {generating ? (
-            <button type="button" className="composer__send" aria-label="停止生成" title="停止生成" onClick={() => void cancel()}>
+            <button type="button" className="composer__send" aria-label="停止" title="停止" onClick={() => void cancel()}>
               <svg viewBox="0 0 12 12" aria-hidden="true">
                 <rect x="3" y="3" width="6" height="6" rx="1" />
               </svg>
