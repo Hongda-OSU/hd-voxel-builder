@@ -25,3 +25,16 @@ export function partMarks(part: Part): { mark: string; label: string }[] {
   if (part.paint) marks.push({ mark: "涂", label: "只涂色，不加方块" });
   return marks;
 }
+
+/** 今天 14:32, 昨天 14:32, or 11-03 for older times. */
+export function shortTime(iso: string, now: Date): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const two = (n: number) => String(n).padStart(2, "0");
+  const day = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((day(now) - day(date)) / 86_400_000);
+  const clock = `${two(date.getHours())}:${two(date.getMinutes())}`;
+  if (days === 0) return `今天 ${clock}`;
+  if (days === 1) return `昨天 ${clock}`;
+  return `${two(date.getMonth() + 1)}-${two(date.getDate())}`;
+}

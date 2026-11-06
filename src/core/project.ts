@@ -1,3 +1,4 @@
+import { buildModel } from "./buildModel";
 import { STYLES, validateSpec } from "./spec";
 import type { Part, Style, VoxelSpec } from "./types";
 
@@ -188,4 +189,16 @@ export function parseProject(input: unknown): Project | null {
   if (!Array.isArray(versions) || versions.length === 0 || !versions.every((v) => parseVersion(v))) return null;
   const project = input as unknown as Project;
   return currentVersion(project) ? project : null;
+}
+
+/** The colour that covers the most voxels, for a project's swatch; null for a broken spec. */
+export function mainColor(input: unknown): string | null {
+  const { spec } = validateSpec(input);
+  if (!spec) return null;
+  const counts = new Map<string, number>();
+  for (const voxel of buildModel(spec).cells) {
+    if (voxel) counts.set(voxel.color, (counts.get(voxel.color) ?? 0) + 1);
+  }
+  const [key] = [...counts].sort((a, b) => b[1] - a[1])[0] ?? [];
+  return key === undefined ? null : (spec.palette[key] ?? null);
 }

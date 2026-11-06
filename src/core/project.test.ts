@@ -6,6 +6,7 @@ import {
   currentVersion,
   diffParts,
   localIso,
+  mainColor,
   parseProject,
   projectId,
   setCurrent,
@@ -111,5 +112,13 @@ describe("parseProject", () => {
     expect(broken({ current: 5 })).toBeNull();
     expect(broken({ versions: [] })).toBeNull();
     expect(broken({ versions: [{ n: 1, kind: "generate", prompt: "", retried: false, createdAt: "", spec: {} }] })).toBeNull();
+  });
+});
+
+describe("mainColor", () => {
+  it("picks the colour covering the most voxels", () => {
+    const key = basketball.parts[0]!.color;
+    expect(mainColor(basketball)).toBe(basketball.palette[key]);
+    expect(mainColor({ name: "broken" })).toBeNull();
   });
 });

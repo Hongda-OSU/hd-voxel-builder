@@ -271,6 +271,79 @@ ul {
   padding: 0 8px 8px;
 }
 
+/* Recent projects, above the examples */
+
+.recent__heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.recent__count {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.recent {
+  padding: 0 8px 4px;
+}
+
+.recent__item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+}
+
+.recent__item:hover {
+  background: var(--hover);
+}
+
+.recent__item[aria-pressed="true"] {
+  background: var(--raised-strong);
+}
+
+.recent__thumb {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--stage);
+}
+
+.recent__thumb span {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}
+
+.recent__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recent__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent__meta {
+  color: var(--muted);
+  font-size: 11px;
+}
+
 /* Composer: pinned to the bottom of the left column, like a chat input. */
 
 .composer {
