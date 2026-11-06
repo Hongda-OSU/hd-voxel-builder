@@ -26,7 +26,7 @@ A local macOS voxel workshop for one user: Claude writes build steps, determinis
 
 ## Rules
 
-- Follow the implementation plan's stage order; the current stage is 5b (reference images in the app).
+- Follow the implementation plan's stage order; the current stage is 6 (conversational edits and saved projects).
 - AI returns `VoxelSpec` build steps only. Keep `src/core/types.ts`, `src/prompts/tool.json`, and `src/core/spec.ts` validation in sync; type assertions do not validate external JSON.
 - Coordinates: size `[w, d, h]`, cells `[x, h, d]`, boxes `[x0, x1, h0, h1, d0, d1]`, inclusive; the front faces max `d`. Later parts overwrite earlier ones; part names are unique and stable.
 - Preserve `paint`, `mirrorX`, `chamfer`, `sphere`, and `group` semantics; animated parts use `group`.
