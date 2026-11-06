@@ -22,6 +22,8 @@ Style rules:
 - Nothing floats: every part connects to the ground through touching voxels.
 - Prefer mirrorX for anything symmetric.
 - Keep part names short, unique and stable.
+- Write `name` and every part name in the language of the description: a Chinese
+  description gets Chinese names.
 - Original designs only. If the description names an existing game, anime or brand
   character, make a clearly different original take and say so in `name`.
 
