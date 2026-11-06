@@ -63,7 +63,7 @@ describe("generateStore", () => {
       attachFor: null,
     });
     useModelStore.getState().loadSpec({ name: "none" });
-    useProjectStore.setState({ projects: [], project: null, refs: [], error: null });
+    useProjectStore.setState({ projects: [], project: null, editing: false, refs: [], error: null });
   });
 
   it("loads a valid spec after one call", async () => {
@@ -128,11 +128,11 @@ describe("reference images", () => {
   beforeEach(() => {
     mocked.mockReset();
     store.setState({ style: "chibi", description: "", phase: { step: "idle" }, refs: [], attach: true, attachFor: null });
-    useProjectStore.setState({ projects: [], project: null, refs: [], error: null });
+    useProjectStore.setState({ projects: [], project: null, editing: false, refs: [], error: null });
   });
 
   // The helper tests below expect no project open.
-  afterEach(() => useProjectStore.setState({ projects: [], project: null, refs: [], error: null }));
+  afterEach(() => useProjectStore.setState({ projects: [], project: null, editing: false, refs: [], error: null }));
 
   it("keeps images only, up to three", async () => {
     await store.getState().addRefs([png("a"), new Blob(["x"], { type: "text/plain" }), png("b")]);
@@ -188,7 +188,7 @@ describe("reference images", () => {
     const project = createProject("20261106-0900", "generate", { spec: ball, prompt: "" }, new Date(2026, 10, 6, 9), {
       refs: ["1.png"],
     });
-    useProjectStore.setState({ project, refs: [{ ...ref("a"), name: "1.png" }] });
+    useProjectStore.setState({ project, editing: true, refs: [{ ...ref("a"), name: "1.png" }] });
     replies(good, good);
     store.setState({ description: "再高一点" });
     await store.getState().generate();
@@ -229,11 +229,23 @@ describe("helpers", () => {
     expect(store.getState().phase).toMatchObject({ step: "done", retried: true });
   });
 
-  describe("with a project open", () => {
+  it("makes a new project while another one is only shown", async () => {
+    const ball = validateSpec(good).spec as VoxelSpec;
+    const shown = createProject("20261106-0900", "generate", { spec: ball, prompt: "" }, new Date(2026, 10, 6, 9));
+    useProjectStore.setState({ project: shown, editing: false });
+    store.setState({ description: "一个篮球" });
+    replies(good);
+    await store.getState().generate();
+    expect(generateCalls()[0]?.text).toBe("一个篮球");
+    expect(useProjectStore.getState().project?.id).not.toBe("20261106-0900");
+    expect(useProjectStore.getState().editing).toBe(false);
+  });
+
+  describe("with a project being edited", () => {
     const ball = validateSpec(good).spec as VoxelSpec;
     const open = () => {
       const project = createProject("20261106-0900", "generate", { spec: ball, prompt: "一个篮球" }, new Date(2026, 10, 6, 9));
-      useProjectStore.setState({ project: { ...project, style: "chibi" } });
+      useProjectStore.setState({ project: { ...project, style: "chibi" }, editing: true });
     };
     const bigger = { ...ball, size: [30, 30, 30] };
 

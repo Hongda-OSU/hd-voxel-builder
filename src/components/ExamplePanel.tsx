@@ -15,6 +15,8 @@ function RecentList() {
   const projects = useProjectStore((state) => state.projects);
   const openId = useProjectStore((state) => state.project?.id);
   const open = useProjectStore((state) => state.open);
+  const edit = useProjectStore((state) => state.edit);
+  const busy = useGenerateStore((state) => isBusy(state.phase));
   const remove = useProjectStore((state) => state.remove);
   const [pending, setPending] = useState<ProjectSummary | null>(null);
   // Rereads the folder on mount and whenever the window comes back to the front,
@@ -50,12 +52,18 @@ function RecentList() {
       </h2>
       <ul className="recent" aria-labelledby="recent-heading">
         {projects.map((project) => (
-          <li key={project.id}>
+          <li key={project.id} className={project.id === openId ? "recent__row recent__row--on" : "recent__row"}>
             <button
               type="button"
               className="recent__item"
               aria-pressed={project.id === openId}
-              onClick={() => void open(project.id)}
+              title="点一下查看，双击修改"
+              onClick={() => {
+                if (project.id !== openId) void open(project.id);
+              }}
+              onDoubleClick={() => {
+                if (!busy) void edit(project.id);
+              }}
             >
               <span className="recent__thumb">
                 <span style={{ background: colors.get(project.id) ?? "transparent" }} />
@@ -67,17 +75,29 @@ function RecentList() {
                 </span>
               </span>
             </button>
-            <button
-              type="button"
-              className="recent__delete"
-              aria-label={`删除「${project.name}」`}
-              title="移到废纸篓"
-              onClick={() => setPending(project)}
-            >
-              <svg viewBox="0 0 12 12" aria-hidden="true">
-                <path d="M2.5 3.5h7M5 3.5V2h2v1.5M3.5 3.5l.5 6.5h4l.5-6.5" />
-              </svg>
-            </button>
+            {/* Only the chosen row has buttons, so a project is seen before it is changed or deleted. */}
+            {project.id === openId && (
+              <div className="recent__actions">
+                <button type="button" className="recent__edit" disabled={busy} onClick={() => void edit(project.id)}>
+                  <svg viewBox="0 0 12 12" aria-hidden="true">
+                    <path d="M2 10l.6-2.4L8 2.2 9.8 4 4.4 9.4zM7 3.2L8.8 5" />
+                  </svg>
+                  修改
+                </button>
+                <button
+                  type="button"
+                  className="recent__delete"
+                  aria-label={`删除「${project.name}」`}
+                  title="移到废纸篓"
+                  disabled={busy}
+                  onClick={() => setPending(project)}
+                >
+                  <svg viewBox="0 0 12 12" aria-hidden="true">
+                    <path d="M2.5 3.5h7M5 3.5V2h2v1.5M3.5 3.5l.5 6.5h4l.5-6.5" />
+                  </svg>
+                </button>
+              </div>
+            )}
           </li>
         ))}
       </ul>
@@ -112,9 +132,9 @@ function RecentList() {
 
 const hasFiles = (event: ReactDragEvent) => event.dataTransfer.types.includes("Files");
 
-/** The left column: the projects, or the open project's versions, above the composer. */
+/** The left column: the projects, or the edited project's versions, above the composer. */
 export function ExamplePanel() {
-  const project = useProjectStore((state) => state.project);
+  const project = useProjectStore((state) => (state.editing ? state.project : null));
   const busy = useGenerateStore((state) => isBusy(state.phase));
   // Images dropped anywhere on the column become reference images of the next new project.
   const accepts = !project && !busy;

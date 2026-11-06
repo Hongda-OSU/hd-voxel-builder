@@ -140,8 +140,8 @@ export function GeneratePanel() {
   const { style, description, claude, phase, refs, attachFor } = useGenerateStore();
   const { setStyle, setDescription, checkClaude, generate, cancel, addRefs, setAttach } = useGenerateStore.getState();
   const projectError = useProjectStore((state) => state.error);
-  // With a project open the composer writes edits to its current version.
-  const project = useProjectStore((state) => state.project);
+  // While a project is being edited the composer writes edits to its current version.
+  const project = useProjectStore((state) => (state.editing ? state.project : null));
   const projectRefs = useProjectStore((state) => state.refs);
   const latest = project ? Math.max(...project.versions.map((version) => version.n)) : 0;
   const shownId = useModelStore((state) => state.modelId);

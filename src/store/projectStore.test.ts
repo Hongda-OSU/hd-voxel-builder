@@ -5,7 +5,7 @@ import { validateSpec } from "../core/spec";
 import type { VoxelSpec } from "../core/types";
 import { examples, starterExamples } from "../prompts/examples";
 import { useModelStore } from "./modelStore";
-import { useProjectStore } from "./projectStore";
+import { launchProject, useProjectStore } from "./projectStore";
 import type { ProjectSummary } from "./projectStore";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
@@ -40,7 +40,7 @@ const saved = () =>
 describe("projectStore", () => {
   beforeEach(() => {
     mocked.mockReset();
-    store.setState({ projects: [], project: null, refs: [], error: null });
+    store.setState({ projects: [], project: null, editing: false, refs: [], error: null });
     useModelStore.getState().loadSpec({ name: "none" });
   });
 
@@ -92,7 +92,10 @@ describe("projectStore", () => {
     await store.getState().open("20261105-1432");
     await vi.waitFor(() => expect(store.getState().refs).toHaveLength(1));
     expect(store.getState().refs[0]).toEqual({ name: "1.png", mediaType: "image/png", data: btoa("PNG") });
+    // Leaving the edit keeps the project, and its images, on screen.
     store.getState().close();
+    expect(store.getState().refs).toHaveLength(1);
+    store.getState().unload();
     expect(store.getState().refs).toEqual([]);
   });
 
@@ -148,7 +151,7 @@ describe("projectStore", () => {
     expect(store.getState().error).toContain("读不到作品");
   });
 
-  it("moves a project to the Trash and opens the newest one left", async () => {
+  it("moves a project to the Trash and stays on the list", async () => {
     const kept = createProject("20261105-1000", "generate", { spec: basketball, prompt: "" }, startedAt);
     const gone = createProject("20261105-2307", "generate", { spec: basketball, prompt: "" }, startedAt);
     answer({ load_project: JSON.parse(JSON.stringify(gone)), list_projects: [summary(gone.id, gone.updatedAt), summary(kept.id, kept.updatedAt)] });
@@ -158,7 +161,15 @@ describe("projectStore", () => {
     await store.getState().remove(gone.id);
     expect(mocked).toHaveBeenCalledWith("trash_project", { id: gone.id });
     expect(store.getState().projects.map((p) => p.id)).toEqual([kept.id]);
-    expect(store.getState().project?.id).toBe(kept.id);
+    expect(store.getState().project).toBeNull();
+    expect(useModelStore.getState().spec).toBeNull();
+  });
+
+  it("leaves the canvas alone when another project is removed", async () => {
+    useModelStore.getState().loadSpec(basketball, "20261105-1000");
+    answer({ list_projects: [] });
+    await store.getState().remove("20261105-2307");
+    expect(useModelStore.getState().modelId).toBe("20261105-1000");
   });
 
   it("leaves an empty canvas after the last project goes", async () => {
@@ -239,5 +250,61 @@ describe("projectStore", () => {
     release([]);
     await stale;
     expect(store.getState().project?.id).toBe(project.id);
+  });
+});
+
+describe("browsing and editing", () => {
+  const ball = createProject("20261106-0900", "generate", { spec: basketball, prompt: "" }, startedAt);
+  const car = createProject("20261106-0901", "generate", { spec: basketball, prompt: "" }, startedAt);
+
+  beforeEach(() => {
+    mocked.mockReset();
+    mocked.mockImplementation(async (command: string, args?: unknown) => {
+      if (command === "load_project") return JSON.parse(JSON.stringify((args as { id: string }).id === ball.id ? ball : car));
+      if (command === "list_projects") return [summary(ball.id, ball.updatedAt), summary(car.id, car.updatedAt)];
+      return undefined;
+    });
+    store.setState({ projects: [], project: null, editing: false, refs: [], error: null });
+  });
+
+  it("shows a chosen project without editing it", async () => {
+    await store.getState().open(ball.id);
+    expect(store.getState()).toMatchObject({ project: { id: ball.id }, editing: false });
+    expect(useModelStore.getState().modelId).toBe(ball.id);
+  });
+
+  it("edits only when asked, and choosing another project stops editing", async () => {
+    await store.getState().open(ball.id);
+    await store.getState().edit(ball.id);
+    expect(store.getState().editing).toBe(true);
+    await store.getState().open(car.id);
+    expect(store.getState()).toMatchObject({ project: { id: car.id }, editing: false });
+  });
+
+  it("opens and edits in one go, as a double-click does", async () => {
+    await store.getState().edit(car.id);
+    expect(store.getState()).toMatchObject({ project: { id: car.id }, editing: true });
+  });
+
+  it("keeps the project on the canvas when editing stops", async () => {
+    await store.getState().edit(ball.id);
+    store.getState().close();
+    expect(store.getState()).toMatchObject({ project: { id: ball.id }, editing: false });
+    expect(useModelStore.getState().modelId).toBe(ball.id);
+  });
+});
+
+describe("launchProject", () => {
+  const list = [summary("new", "2026-11-06T10:00:00-06:00"), summary("old", "2026-11-05T10:00:00-06:00")];
+
+  it("reopens the project left open", () => {
+    expect(launchProject("old", list)).toBe("old");
+  });
+
+  it("opens the newest when the list was showing, nothing is known or the project is gone", () => {
+    expect(launchProject("", list)).toBe("new");
+    expect(launchProject(null, list)).toBe("new");
+    expect(launchProject("deleted", list)).toBe("new");
+    expect(launchProject(null, [])).toBeNull();
   });
 });

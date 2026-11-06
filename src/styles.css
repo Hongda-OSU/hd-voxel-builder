@@ -579,33 +579,84 @@ ul {
 }
 
 .recent__meta {
+  overflow: hidden;
   color: var(--muted);
   font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Shows on hover or keyboard focus, so the list stays quiet. */
-.recent__delete {
+/* 修改 and delete sit over the chosen row's right end. */
+.recent__actions {
   position: absolute;
   top: 50%;
   right: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transform: translateY(-50%);
+}
+
+/* The name gives way to the buttons instead of running under them. */
+.recent__row--on .recent__item {
+  padding-right: 96px;
+}
+
+.recent__delete {
   width: 26px;
   height: 26px;
   display: grid;
   place-items: center;
   border: 0;
   border-radius: 6px;
-  background: var(--raised-strong);
+  background: var(--raised-hover);
   color: var(--muted);
-  opacity: 0;
-  transform: translateY(-50%);
 }
 
-.recent li:hover .recent__delete,
-.recent__delete:focus-visible {
-  opacity: 1;
+.recent__delete:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
-.recent__delete:hover {
+.recent__edit {
+  height: 26px;
+  padding: 0 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--raised-hover);
+  color: var(--ink);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.recent__edit:hover:not(:disabled) {
+  background: var(--line-strong);
+}
+
+.recent__edit:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.recent__edit:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.recent__edit svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.recent__delete:hover:not(:disabled) {
   background: var(--raised-hover);
   color: var(--error);
 }

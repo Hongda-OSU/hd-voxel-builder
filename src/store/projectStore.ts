@@ -33,13 +33,22 @@ export interface ProjectSummary {
 interface ProjectState {
   /** Newest first. */
   projects: ProjectSummary[];
-  /** The open project; null while an example or nothing is shown. */
+  /** The project on the canvas, chosen in the list; null when nothing is shown. */
   project: Project | null;
+  /**
+   * True while `project` is being edited: the left column shows its versions and
+   * the composer writes edits. Choosing a project only shows it; editing starts
+   * with its 修改 button or a double-click.
+   */
+  editing: boolean;
   /** The open project's reference images, read from refs/ after it opens. */
   refs: SavedRef[];
   error: string | null;
   refresh: () => Promise<void>;
+  /** Shows a project on the canvas, not editing it. */
   open: (id: string) => Promise<void>;
+  /** Shows a project, if it is not shown yet, and starts editing it. */
+  edit: (id: string) => Promise<void>;
   /** Saves a finished generation, and the reference images it had, as a new project and shows it. */
   createFromGeneration: (input: VersionInput, startedAt: Date, refs?: RefImage[]) => Promise<void>;
   /** Adds the starter projects; the caller makes sure this happens only once. */
@@ -48,15 +57,49 @@ interface ProjectState {
   addEdit: (input: VersionInput) => Promise<void>;
   /** Shows another version of the open project; nothing is deleted. */
   select: (n: number) => Promise<void>;
-  /** Moves a project to the Trash; the open one gives way to the newest left, or nothing. */
+  /** Moves a project to the Trash; if it was on screen, the canvas empties and the list stays. */
   remove: (id: string) => Promise<void>;
-  /** Leaves the open project, e.g. when an example is picked. */
+  /** Stops editing and goes back to the list; the project stays on the canvas. */
   close: () => void;
+  /** Shows no project, e.g. for a generated shape too broken to save. */
+  unload: () => void;
   /** Opens a saved reference image of the open project in Preview. */
   openRef: (name: string) => Promise<void>;
 }
 
 const newestFirst = (a: ProjectSummary, b: ProjectSummary) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt);
+
+const LAST_KEY = "hd.lastProject";
+
+/**
+ * Where the user left off: a project id, "" for the project list, or null when
+ * unknown. A convenience only, so a missing or blocked store just means "unknown".
+ */
+export function readLastProject(): string | null {
+  try {
+    return typeof localStorage === "undefined" ? null : localStorage.getItem(LAST_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function rememberProject(id: string | null): void {
+  try {
+    if (typeof localStorage !== "undefined") localStorage.setItem(LAST_KEY, id ?? "");
+  } catch {
+    // Not remembered: the next launch opens the newest project instead.
+  }
+}
+
+/**
+ * The project to open at launch: the one last open if it still exists, else the
+ * newest. Launching onto an empty canvas felt broken, so a project always opens
+ * while there is one, even if the list was showing at quit.
+ */
+export function launchProject(last: string | null, projects: ProjectSummary[]): string | null {
+  if (last && projects.some((summary) => summary.id === last)) return last;
+  return projects[0]?.id ?? null;
+}
 
 /** Writes project.json and the current version's .vox, plus new reference images. */
 async function save(project: Project, refs: SavedRef[] = []): Promise<void> {
@@ -104,6 +147,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
   return {
     projects: [],
     project: null,
+    editing: false,
     refs: [],
     error: null,
     refresh: async () => {
@@ -115,7 +159,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         const open = get().project;
         const gone =
           before === switches && open !== null && !projects.some((summary) => summary.id === open.id);
-        set({ projects: [...projects].sort(newestFirst), error: null, ...(gone ? { project: null, refs: [] } : {}) });
+        set({ projects: [...projects].sort(newestFirst), error: null, ...(gone ? { project: null, editing: false, refs: [] } : {}) });
       } catch (error) {
         set({ error: String(error) });
       }
@@ -125,7 +169,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         const project = parseProject(await invoke<unknown>("load_project", { id }));
         if (!project) throw new Error(`作品「${id}」的 project.json 格式不对，打不开`);
         switches++;
-        set({ project, refs: [], error: null });
+        set({ project, editing: false, refs: [], error: null });
         show(project);
         if (project.refs?.length) void loadRefs(id);
       } catch (error) {
@@ -134,6 +178,10 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         await get().refresh();
         set({ error: message });
       }
+    },
+    edit: async (id) => {
+      if (get().project?.id !== id) await get().open(id);
+      if (get().project?.id === id) set({ editing: true });
     },
     createFromGeneration: async (input, startedAt, images = []) => {
       const id = projectId(startedAt, get().projects.map((summary) => summary.id));
@@ -178,17 +226,16 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         set({ error: String(error) });
         return;
       }
-      // The canvas may show it even when no project is marked open (say, after a reload).
-      const wasOpen = get().project?.id === id || useModelStore.getState().modelId === id;
+      // The canvas may show it while the list is up, after 「‹ 作品」. Deleting happens in
+      // the list, so the list stays rather than another project opening by surprise.
+      const shown = get().project?.id === id || useModelStore.getState().modelId === id;
       await get().refresh();
-      if (!wasOpen) return;
-      const newest = get().projects[0];
-      if (newest) return get().open(newest.id);
-      // Nothing left: an empty canvas; removed starters do not come back.
-      set({ project: null, refs: [] });
+      if (!shown) return;
+      set({ project: null, editing: false, refs: [] });
       useModelStore.getState().clear();
     },
-    close: () => set({ project: null, refs: [], error: null }),
+    close: () => set({ editing: false, error: null }),
+    unload: () => set({ project: null, editing: false, refs: [] }),
     openRef: async (name) => {
       const open = get().project;
       if (!open) return;
@@ -199,4 +246,9 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       }
     },
   };
+});
+
+// Records every change of the open project, whichever action made it.
+useProjectStore.subscribe((state, previous) => {
+  if (state.project?.id !== previous.project?.id) rememberProject(state.project?.id ?? null);
 });

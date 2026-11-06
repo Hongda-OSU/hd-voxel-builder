@@ -9,16 +9,16 @@ import { StatusBar } from "./components/StatusBar";
 import { TitleBar } from "./components/TitleBar";
 import { examples } from "./prompts/examples";
 import { useModelStore } from "./store/modelStore";
-import { useProjectStore } from "./store/projectStore";
+import { launchProject, readLastProject, useProjectStore } from "./store/projectStore";
 import { useSettingsStore } from "./store/settingsStore";
 
 export default function App() {
   const loadSpec = useModelStore((state) => state.loadSpec);
   const settingsOpen = useSettingsStore((state) => state.open);
 
-  // Reopens the most recently changed project. The very first run adds the starter
-  // projects; with none left the canvas stays empty. The browser build has no
-  // projects, so it shows one example.
+  // Reopens the project last open, or the newest one. The very first run adds the
+  // starter projects; with none left the canvas stays empty. The browser build has
+  // no projects, so it shows one example.
   useEffect(() => {
     if (!isTauri()) {
       const first = examples[0];
@@ -29,8 +29,8 @@ export default function App() {
       const store = useProjectStore.getState();
       await store.refresh();
       if (await invoke<boolean>("take_first_run").catch(() => false)) await store.addStarters();
-      const newest = useProjectStore.getState().projects[0];
-      if (newest) await store.open(newest.id);
+      const id = launchProject(readLastProject(), useProjectStore.getState().projects);
+      if (id) await store.open(id);
     })();
   }, [loadSpec]);
 

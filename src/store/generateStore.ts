@@ -110,8 +110,10 @@ export const useGenerateStore = create<GenerateState>((set, get) => ({
     const { description, model, phase, refs, attach, attachFor } = get();
     const text = description.trim();
     if (!text || isBusy(phase)) return;
-    // With a project open, the composer edits its current version in the project's own style.
-    const { project, refs: projectRefs } = useProjectStore.getState();
+    // While a project is being edited, the composer edits its current version in the
+    // project's own style; otherwise it makes a new project.
+    const { project: shown, editing: editMode, refs: projectRefs } = useProjectStore.getState();
+    const project = editMode ? shown : null;
     const base = project ? currentVersion(project) : undefined;
     const editing = base !== undefined;
     const request = base ? editPrompt(text, base.spec) : text;
@@ -146,7 +148,7 @@ export const useGenerateStore = create<GenerateState>((set, get) => ({
         return;
       } else {
         // A broken shape shows its problems but has nothing worth saving.
-        useProjectStore.getState().close();
+        useProjectStore.getState().unload();
         useModelStore.getState().loadSpec(spec);
       }
       // Like a chat input: a sent description is cleared; a failed one stays to retry.
@@ -173,8 +175,8 @@ export const useGenerateStore = create<GenerateState>((set, get) => ({
   },
   removeRef: (index) => set((state) => ({ refs: state.refs.filter((_, i) => i !== index) })),
   setAttach: (on) => {
-    const project = useProjectStore.getState().project;
-    if (project) set({ attachFor: on ? project.id : null });
+    const { project, editing } = useProjectStore.getState();
+    if (project && editing) set({ attachFor: on ? project.id : null });
     else set({ attach: on });
   },
   describe: async () => {

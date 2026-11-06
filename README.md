@@ -46,7 +46,7 @@ pnpm dev    # Run the desktop app
 pnpm build  # Build src-tauri/target/release/bundle/macos/HD Voxel Builder.app
 ```
 
-Pick a style, write a description, and press Return to generate (Shift+Return adds a line). Every project is saved with all its versions to `~/HDVoxel/projects/<id>/`. With a project open, the same box takes edit requests such as 「车斗再长两格」, and clicking an older version returns to it. The newest project reopens at launch; the first launch adds a basketball and a car to start from.
+Pick a style, write a description, and press Return to generate (Shift+Return adds a line). Every project is saved with all its versions to `~/HDVoxel/projects/<id>/`. Click a project in the list to view it; its 修改 button (or a double-click) opens its versions, and the same box then takes edit requests such as 「车斗再长两格」. Clicking an older version returns to it. At launch the project you last had open reopens, or the newest one; the first launch adds a basketball and a car to start from.
 
 Click the file name under the export button to show the `.vox` in Finder, or hover a project in the list to move it to the Trash. **在 MagicaVoxel 中打开** writes the model into MagicaVoxel's model folder (change it with ⌘,) and restarts MagicaVoxel; then click the file in its Project list.
 
