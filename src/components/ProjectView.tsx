@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Project, Version } from "../core/project";
-import { useGenerateStore } from "../store/generateStore";
+import { dataUrl } from "../core/refs";
+import { isBusy, useGenerateStore } from "../store/generateStore";
 import { useProjectStore } from "../store/projectStore";
 
 const KIND_LABELS: Record<Version["kind"], string> = { generate: "生成", edit: "修改", example: "自带" };
@@ -45,10 +46,12 @@ function Changes({ version }: { version: Version }) {
 export function ProjectView({ project }: { project: Project }) {
   const select = useProjectStore((state) => state.select);
   const close = useProjectStore((state) => state.close);
+  const refs = useProjectStore((state) => state.refs);
+  const openRef = useProjectStore((state) => state.openRef);
   const phase = useGenerateStore((state) => state.phase);
   const description = useGenerateStore((state) => state.description);
-  const busy = phase.step === "generating";
-  const pending = busy && phase.editing;
+  const busy = isBusy(phase);
+  const pending = phase.step === "generating" && phase.editing;
   const end = useRef<HTMLLIElement>(null);
 
   // Keeps the newest version, or the one being made, in view.
@@ -64,6 +67,22 @@ export function ProjectView({ project }: { project: Project }) {
           ‹ 作品
         </button>
         <h2 className="project-head__name">{project.name}</h2>
+        {refs.length > 0 && (
+          <div className="project-head__refs">
+            {refs.map((ref, index) => (
+              <button
+                key={ref.name}
+                type="button"
+                className="project-head__ref"
+                title="用「预览」打开"
+                onClick={() => void openRef(ref.name)}
+              >
+                <img src={dataUrl(ref)} alt={`参考图 ${index + 1}`} />
+              </button>
+            ))}
+            <span>参考图 {refs.length} 张</span>
+          </div>
+        )}
       </div>
       <h2 className="panel__heading recent__heading" id="versions-heading">
         <span>版本</span>
@@ -81,7 +100,10 @@ export function ProjectView({ project }: { project: Project }) {
             >
               <span className="version__top">
                 <b>v{version.n}</b>
-                <span>{versionLine(version)}</span>
+                <span>
+                  {versionLine(version)}
+                  {version.attached && <em className="version__attached"> · 附图</em>}
+                </span>
               </span>
               <span className="version__prompt">
                 {version.prompt || (version.kind === "example" ? "app 自带的作品" : "（没有描述）")}

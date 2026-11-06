@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import type { DragEvent as ReactDragEvent } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { mainColor } from "../core/project";
+import { MAX_REFS } from "../core/refs";
+import { isBusy, useGenerateStore } from "../store/generateStore";
 import { useProjectStore } from "../store/projectStore";
 import type { ProjectSummary } from "../store/projectStore";
 import { GeneratePanel } from "./GeneratePanel";
@@ -107,14 +110,56 @@ function RecentList() {
   );
 }
 
+const hasFiles = (event: ReactDragEvent) => event.dataTransfer.types.includes("Files");
+
 /** The left column: the projects, or the open project's versions, above the composer. */
 export function ExamplePanel() {
   const project = useProjectStore((state) => state.project);
+  const busy = useGenerateStore((state) => isBusy(state.phase));
+  // Images dropped anywhere on the column become reference images of the next new project.
+  const accepts = !project && !busy;
+  const [dragging, setDragging] = useState(false);
+
+  // A file dropped outside the column must not replace the whole page with that file.
+  useEffect(() => {
+    const block = (event: DragEvent) => event.preventDefault();
+    window.addEventListener("dragover", block);
+    window.addEventListener("drop", block);
+    return () => {
+      window.removeEventListener("dragover", block);
+      window.removeEventListener("drop", block);
+    };
+  }, []);
 
   return (
-    <section className="panel panel--left" aria-label="作品">
+    <section
+      className="panel panel--left"
+      aria-label="作品"
+      onDragOver={(event) => {
+        if (!accepts || !hasFiles(event)) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "copy";
+        setDragging(true);
+      }}
+      onDragLeave={(event) => {
+        // Moving onto a child also fires dragleave; only leaving the column counts.
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false);
+      }}
+      onDrop={(event) => {
+        setDragging(false);
+        if (!accepts || !hasFiles(event)) return;
+        event.preventDefault();
+        void useGenerateStore.getState().addRefs([...event.dataTransfer.files]);
+      }}
+    >
       <div className="left-scroll">{project ? <ProjectView project={project} /> : <RecentList />}</div>
       <GeneratePanel />
+      {dragging && (
+        <div className="drop-zone" aria-hidden="true">
+          <span>松开添加参考图</span>
+          <small>PNG、JPG、WebP · 最多 {MAX_REFS} 张</small>
+        </div>
+      )}
     </section>
   );
 }

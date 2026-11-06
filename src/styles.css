@@ -237,7 +237,27 @@ ul {
 }
 
 .panel--left {
+  position: relative;
   border-right: 1px solid var(--line);
+}
+
+/* Covers the left column while image files are dragged over it. */
+.drop-zone {
+  position: absolute;
+  inset: 6px;
+  display: grid;
+  place-content: center;
+  gap: 6px;
+  border: 1.5px dashed var(--accent);
+  border-radius: 8px;
+  background: var(--gizmo-backdrop);
+  text-align: center;
+  pointer-events: none;
+}
+
+.drop-zone small {
+  color: var(--muted);
+  font-size: 11px;
 }
 
 .panel--right {
@@ -298,6 +318,46 @@ ul {
   cursor: default;
 }
 
+.project-head__refs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.project-head__refs span {
+  margin-left: 4px;
+}
+
+.project-head__ref {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--raised);
+}
+
+.project-head__ref img,
+.composer__ref img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.project-head__ref:hover {
+  outline: 1px solid var(--line-strong);
+}
+
+.project-head__ref:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 /* Long names wrap instead of being cut off. */
 .project-head__name {
   margin: 0;
@@ -353,6 +413,11 @@ ul {
 .version__top b {
   color: var(--ink);
   font-weight: 600;
+}
+
+.version__attached {
+  color: var(--accent);
+  font-style: normal;
 }
 
 .version__prompt {
@@ -596,6 +661,140 @@ ul {
   border-color: var(--muted);
 }
 
+/* Reference images of a new project: thumbnails, then 看图写描述 and the attach switch. */
+.composer__refs {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.composer__ref {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--raised);
+}
+
+.composer__ref--add {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px dashed var(--line-strong);
+  background: transparent;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.composer__ref--add:hover:not(:disabled) {
+  border-color: var(--muted);
+  color: var(--ink);
+}
+
+.composer__unref {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--gizmo-backdrop);
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.composer__refbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.composer__describe,
+.composer__attach {
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.composer__describe {
+  padding: 0 8px;
+  border-radius: 6px;
+  background: var(--raised-strong);
+  color: var(--ink);
+}
+
+.composer__describe:hover:not(:disabled) {
+  background: var(--raised-hover);
+}
+
+.composer__attach {
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--raised);
+  color: var(--muted);
+}
+
+.composer__attach:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.composer__attach[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.composer__describe:disabled,
+.composer__attach:disabled,
+.composer__ref--add:disabled,
+.composer__unref:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.composer__describe svg,
+.composer__attach svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.composer__spinner {
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .composer__spinner {
+    animation: none;
+  }
+}
+
+.composer__divider {
+  height: 1px;
+  background: var(--line);
+}
+
 .composer__text {
   min-height: 60px;
   max-height: 200px;
@@ -695,6 +894,10 @@ ul {
   stroke: none;
 }
 
+.composer__describe:focus-visible,
+.composer__attach:focus-visible,
+.composer__ref--add:focus-visible,
+.composer__unref:focus-visible,
 .composer__pill:focus-visible,
 .composer__send:focus-visible {
   outline: 2px solid var(--accent);
