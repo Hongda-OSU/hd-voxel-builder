@@ -955,12 +955,15 @@ ul {
   cursor: grabbing;
 }
 
+/* Sits over the empty floor; drags still reach the canvas underneath. */
 .preview__empty {
-  height: 100%;
+  position: absolute;
+  inset: 0;
   margin: 0;
   display: grid;
   place-items: center;
   color: var(--muted);
+  pointer-events: none;
 }
 
 .preview__label {

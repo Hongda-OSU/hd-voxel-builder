@@ -3,6 +3,7 @@ import type { PointerEvent } from "react";
 import { drawViewport, extractFaces } from "../render/viewport";
 import type { ViewportStyle } from "../render/viewport";
 import { useModelStore } from "../store/modelStore";
+import { useProjectStore } from "../store/projectStore";
 import { PRESET_LABELS } from "./labels";
 
 const ORBIT_SPEED = 0.01; // radians per CSS pixel
@@ -20,12 +21,16 @@ function readStyle(): ViewportStyle {
   };
 }
 
+/** The floor drawn when there is no model, so the empty canvas still looks like a viewport. */
+const EMPTY_SIZE: [number, number, number] = [24, 24, 24];
+
 const degrees = (radians: number) => Math.round((((radians * 180) / Math.PI) % 360 + 360) % 360);
 
 export function Viewport() {
   const spec = useModelStore((state) => state.spec);
   const grid = useModelStore((state) => state.grid);
   const issues = useModelStore((state) => state.issues);
+  const hasProjects = useProjectStore((state) => state.projects.length > 0);
   const camera = useModelStore((state) => state.camera);
   const selectedPart = useModelStore((state) => state.selectedPart);
   const { orbit, pan, setView, resetCamera, clearSelection } = useModelStore.getState();
@@ -58,19 +63,19 @@ export function Viewport() {
     };
     canvas.addEventListener("wheel", onWheel, { passive: false });
     return () => canvas.removeEventListener("wheel", onWheel);
-  }, [grid]);
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx || !spec || !grid || size.width === 0 || size.height === 0) return;
+    if (!canvas || !ctx || size.width === 0 || size.height === 0) return;
     const dpr = window.devicePixelRatio || 1;
     canvas.width = size.width * dpr;
     canvas.height = size.height * dpr;
     canvas.style.width = `${size.width}px`;
     canvas.style.height = `${size.height}px`;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    drawViewport(ctx, grid.size, faces, spec.palette, {
+    drawViewport(ctx, grid?.size ?? EMPTY_SIZE, faces, spec?.palette ?? {}, {
       camera,
       highlight: selectedPart,
       width: size.width,
@@ -104,21 +109,25 @@ export function Viewport() {
   return (
     <div className="preview">
       <div className="preview__area" ref={areaRef}>
-        {grid ? (
-          <canvas
-            ref={canvasRef}
-            className="preview__canvas"
-            aria-label="3D 视口：拖动旋转，滚轮缩放，按住 Shift 拖动平移，双击重置"
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerUp}
-            onDoubleClick={resetCamera}
-            onContextMenu={(event) => event.preventDefault()}
-          />
-        ) : (
+        {/* Drawn even without a model: the floor and axes stay, with a note on top. */}
+        <canvas
+          ref={canvasRef}
+          className="preview__canvas"
+          aria-label="3D 视口：拖动旋转，滚轮缩放，按住 Shift 拖动平移，双击重置"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          onDoubleClick={resetCamera}
+          onContextMenu={(event) => event.preventDefault()}
+        />
+        {!grid && (
           <p className="preview__empty">
-            {issues.length > 0 ? "没有可显示的模型，问题见右侧校验。" : "还没有模型，在左下角描述一个新模型。"}
+            {issues.length > 0
+              ? "没有可显示的模型，问题见右侧校验。"
+              : hasProjects
+                ? "点左边的作品打开，或者在左下角描述一个新模型。"
+                : "还没有模型，在左下角描述一个新模型。"}
           </p>
         )}
       </div>
