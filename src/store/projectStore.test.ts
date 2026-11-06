@@ -101,4 +101,39 @@ describe("projectStore", () => {
     expect(store.getState().project).toBeNull();
     expect(store.getState().error).toContain("读不到作品");
   });
+
+  it("moves a project to the Trash and opens the newest one left", async () => {
+    const kept = createProject("20261105-1000", "generate", { spec: basketball, prompt: "" }, startedAt);
+    const gone = createProject("20261105-2307", "generate", { spec: basketball, prompt: "" }, startedAt);
+    answer({ load_project: JSON.parse(JSON.stringify(gone)), list_projects: [summary(gone.id, gone.updatedAt), summary(kept.id, kept.updatedAt)] });
+    await store.getState().open(gone.id);
+
+    answer({ load_project: JSON.parse(JSON.stringify(kept)), list_projects: [summary(kept.id, kept.updatedAt)] });
+    await store.getState().remove(gone.id);
+    expect(mocked).toHaveBeenCalledWith("trash_project", { id: gone.id });
+    expect(store.getState().projects.map((p) => p.id)).toEqual([kept.id]);
+    expect(store.getState().project?.id).toBe(kept.id);
+  });
+
+  it("falls back to an example after the last project goes", async () => {
+    const only = createProject("20261105-2307", "generate", { spec: basketball, prompt: "" }, startedAt);
+    answer({ load_project: JSON.parse(JSON.stringify(only)), list_projects: [] });
+    await store.getState().open(only.id);
+    await store.getState().remove(only.id);
+    expect(store.getState().project).toBeNull();
+    expect(useModelStore.getState().modelId).toBe(examples[0]?.id);
+  });
+
+  it("keeps the project when the Trash refuses it", async () => {
+    answer({ trash_project: new Error("移不到废纸篓") });
+    await store.getState().remove("20261105-2307");
+    expect(store.getState().error).toContain("移不到废纸篓");
+  });
+
+  it("clears the canvas when it shows the removed project, open or not", async () => {
+    useModelStore.getState().loadSpec(basketball, "20261105-2307");
+    answer({ list_projects: [] });
+    await store.getState().remove("20261105-2307");
+    expect(useModelStore.getState().modelId).toBe(examples[0]?.id);
+  });
 });

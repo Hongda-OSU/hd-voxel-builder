@@ -51,6 +51,12 @@ fn save_project(id: String, project: serde_json::Value, vox: Vec<u8>) -> Result<
     projects::save(&projects_root()?, &id, &project, &vox)
 }
 
+/// Moves a project folder to the Trash; Finder can put it back.
+#[tauri::command(async)]
+fn trash_project(id: String) -> Result<(), String> {
+    projects::trash(&projects_root()?, &id, projects::move_to_trash)
+}
+
 /// Shows a project's .vox selected in Finder.
 #[tauri::command]
 fn reveal_project_file(id: String) -> Result<(), String> {
@@ -163,7 +169,8 @@ fn main() {
             list_projects,
             load_project,
             save_project,
-            reveal_project_file
+            reveal_project_file,
+            trash_project
         ])
         .run(tauri::generate_context!())
         .expect("failed to run HD Voxel Builder");

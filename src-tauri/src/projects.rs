@@ -104,6 +104,46 @@ pub fn vox_path(root: &Path, id: &str) -> Result<PathBuf, String> {
     }
 }
 
+/// Moves a project folder to the Trash with `move_to_trash`, so Finder can put it back.
+pub fn trash(
+    root: &Path,
+    id: &str,
+    move_to_trash: impl Fn(&Path) -> Result<(), String>,
+) -> Result<(), String> {
+    check_id(id)?;
+    let dir = root.join(id);
+    if !dir.is_dir() {
+        return Err(format!("找不到作品「{id}」"));
+    }
+    move_to_trash(&dir)
+}
+
+/// macOS's own trash tool (with Put Back), else a plain move into ~/.Trash.
+pub fn move_to_trash(path: &Path) -> Result<(), String> {
+    let tool = Path::new("/usr/bin/trash");
+    if tool.is_file() {
+        let status = std::process::Command::new(tool)
+            .arg(path)
+            .status()
+            .map_err(|error| format!("移不到废纸篓：{error}"))?;
+        return if status.success() {
+            Ok(())
+        } else {
+            Err("移不到废纸篓".into())
+        };
+    }
+    let home = std::env::var_os("HOME").ok_or("找不到用户目录")?;
+    let name = path.file_name().ok_or("路径没有文件名")?;
+    let trash = Path::new(&home).join(".Trash");
+    let mut target = trash.join(name);
+    let mut n = 2;
+    while target.exists() {
+        target = trash.join(format!("{}-{n}", name.to_string_lossy()));
+        n += 1;
+    }
+    fs::rename(path, &target).map_err(|error| format!("移不到废纸篓：{error}"))
+}
+
 /// Saves project.json and the current version's .vox, named after the id.
 pub fn save(root: &Path, id: &str, project: &Value, vox: &[u8]) -> Result<(), String> {
     check_id(id)?;
@@ -220,6 +260,27 @@ mod tests {
         assert_eq!(vox_path(&root, "a").unwrap(), root.join("a").join("a.vox"));
         assert!(vox_path(&root, "missing").is_err());
         assert!(vox_path(&root, "../a").is_err());
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn trashes_only_existing_projects() {
+        let root = temp_root("trash");
+        save(&root, "a", &project("a"), b"").unwrap();
+        let moved = std::cell::RefCell::new(Vec::new());
+        let record = |path: &Path| {
+            moved.borrow_mut().push(path.to_path_buf());
+            Ok(())
+        };
+        trash(&root, "a", record).unwrap();
+        assert_eq!(*moved.borrow(), [root.join("a")]);
+        assert!(
+            trash(&root, "missing", record)
+                .unwrap_err()
+                .contains("找不到")
+        );
+        assert!(trash(&root, "../a", record).is_err());
+        assert_eq!(moved.borrow().len(), 1);
         let _ = fs::remove_dir_all(&root);
     }
 

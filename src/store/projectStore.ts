@@ -5,6 +5,7 @@ import { createProject, currentVersion, parseProject, projectId } from "../core/
 import type { Project, VersionInput } from "../core/project";
 import type { Style } from "../core/types";
 import { writeVox } from "../core/voxFile";
+import { examples } from "../prompts/examples";
 import { useModelStore } from "./modelStore";
 
 /** One row of the project list, as list_projects returns it. */
@@ -29,6 +30,8 @@ interface ProjectState {
   open: (id: string) => Promise<void>;
   /** Saves a finished generation as a new project and shows it. */
   createFromGeneration: (input: VersionInput, startedAt: Date) => Promise<void>;
+  /** Moves a project to the Trash; the open one gives way to the newest left. */
+  remove: (id: string) => Promise<void>;
   /** Leaves the open project, e.g. when an example is picked. */
   close: () => void;
 }
@@ -89,6 +92,23 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     } catch (error) {
       set({ error: `生成好了，但没存下来：${String(error)}` });
     }
+  },
+  remove: async (id) => {
+    try {
+      await invoke("trash_project", { id });
+    } catch (error) {
+      set({ error: String(error) });
+      return;
+    }
+    // The canvas may show it even when no project is marked open (say, after a reload).
+    const wasOpen = get().project?.id === id || useModelStore.getState().modelId === id;
+    await get().refresh();
+    if (!wasOpen) return;
+    const newest = get().projects[0];
+    if (newest) return get().open(newest.id);
+    set({ project: null });
+    const first = examples[0];
+    if (first) useModelStore.getState().loadSpec(first.data, first.id);
   },
   close: () => set({ project: null, error: null }),
 }));
