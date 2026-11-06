@@ -9,11 +9,11 @@ export function ExamplePanel() {
 
   return (
     <section className="panel panel--left" aria-label="生成与示例">
-      <GeneratePanel />
-      <h2 className="panel__heading panel__heading--ruled" id="examples-heading">
-        示例
-      </h2>
-      <ul className="example-list" aria-labelledby="examples-heading">
+      <div className="left-scroll">
+        <h2 className="panel__heading" id="examples-heading">
+          示例
+        </h2>
+        <ul className="example-list" aria-labelledby="examples-heading">
         {examples.map((example) => (
           <li key={example.id}>
             <button
@@ -26,7 +26,9 @@ export function ExamplePanel() {
             </button>
           </li>
         ))}
-      </ul>
+        </ul>
+      </div>
+      <GeneratePanel />
     </section>
   );
 }

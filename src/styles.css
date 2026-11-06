@@ -302,85 +302,157 @@ ul {
 
 /* Examples */
 
-.example-list {
+.left-scroll {
   flex: 1;
   min-height: 0;
   overflow: auto;
+}
+
+.example-list {
   padding: 0 8px 8px;
 }
 
-.panel__heading--ruled {
-  margin-top: 8px;
-  border-top: 1px solid var(--line);
-}
+/* Composer: pinned to the bottom of the left column, like a chat input. */
 
-/* Generate */
-
-.generate {
+.composer {
   flex: none;
   display: flex;
   flex-direction: column;
-  padding-bottom: 12px;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--line);
 }
 
-.generate .segmented {
-  margin: 0 16px;
-}
-
-.generate__text {
-  margin: 0 16px;
-  min-height: 96px;
-  padding: 8px 10px;
-  resize: vertical;
-  border: 1px solid var(--line-strong);
-  border-radius: 6px;
-  background: var(--stage);
-  line-height: 1.5;
-}
-
-.generate__text:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
-.generate__text:disabled {
-  color: var(--muted);
-}
-
-.generate__actions {
-  display: flex;
-  margin: 10px 16px 0;
-}
-
-.generate__button {
-  flex: 1;
-}
-
-.generate__note {
-  margin: 6px 16px 0;
+.composer__status {
+  margin: 0;
   color: var(--muted);
   font-size: 11px;
   line-height: 1.5;
   text-align: center;
 }
 
-.generate__note--error {
-  color: var(--error);
-}
-
-/* Status lines stay mounted for screen readers but take no room while empty. */
-.generate__note:empty {
+/* Stays mounted for screen readers but takes no room while empty. */
+.composer__status:empty {
   display: none;
 }
 
-.generate__recheck {
+.composer__status--error {
+  color: var(--error);
+}
+
+.composer__recheck {
   margin-left: 6px;
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--accent);
+  color: var(--ink);
   font-size: 11px;
   text-decoration: underline;
+}
+
+.composer__box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 8px 8px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--stage);
+}
+
+.composer__box:focus-within {
+  border-color: var(--muted);
+}
+
+.composer__text {
+  min-height: 60px;
+  max-height: 200px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+}
+
+.composer__text:disabled {
+  color: var(--muted);
+}
+
+.composer__bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.composer__styles {
+  display: flex;
+  gap: 4px;
+}
+
+.composer__pill {
+  height: 22px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--raised);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.composer__pill:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.composer__pill[aria-checked="true"] {
+  background: var(--raised-strong);
+  color: var(--ink);
+}
+
+.composer__pill:disabled {
+  cursor: default;
+}
+
+.composer__send {
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: var(--raised-strong);
+  color: var(--ink);
+}
+
+.composer__send:hover:not(:disabled) {
+  background: var(--raised-hover);
+}
+
+.composer__send:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.composer__send svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.composer__send rect {
+  fill: currentColor;
+  stroke: none;
+}
+
+.composer__pill:focus-visible,
+.composer__send:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .example-list__item {
@@ -520,10 +592,6 @@ ul {
 
 .segmented__item:disabled {
   cursor: default;
-}
-
-.segmented--three {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 /* MagicaVoxel export */
