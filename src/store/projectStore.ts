@@ -12,7 +12,8 @@ import {
 import type { Project, VersionInput } from "../core/project";
 import type { Style } from "../core/types";
 import { writeVox } from "../core/voxFile";
-import { examples } from "../prompts/examples";
+import { validateSpec } from "../core/spec";
+import { starterExamples } from "../prompts/examples";
 import { useModelStore } from "./modelStore";
 
 /** One row of the project list, as list_projects returns it. */
@@ -37,11 +38,13 @@ interface ProjectState {
   open: (id: string) => Promise<void>;
   /** Saves a finished generation as a new project and shows it. */
   createFromGeneration: (input: VersionInput, startedAt: Date) => Promise<void>;
+  /** Adds the starter projects; the caller makes sure this happens only once. */
+  addStarters: () => Promise<void>;
   /** Adds a finished edit to the open project as its new current version. */
   addEdit: (input: VersionInput) => Promise<void>;
   /** Shows another version of the open project; nothing is deleted. */
   select: (n: number) => Promise<void>;
-  /** Moves a project to the Trash; the open one gives way to the newest left. */
+  /** Moves a project to the Trash; the open one gives way to the newest left, or nothing. */
   remove: (id: string) => Promise<void>;
   /** Leaves the open project, e.g. when an example is picked. */
   close: () => void;
@@ -63,6 +66,7 @@ function show(project: Project): void {
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => {
+
   /** Shows a changed project at once, then saves it; a failed save keeps it on screen. */
   const commit = async (project: Project, failure: string) => {
     set({ project });
@@ -118,6 +122,25 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         set({ error: `生成好了，但没存下来：${String(error)}` });
       }
     },
+    addStarters: async () => {
+      const now = Date.now();
+      const ids = get().projects.map((summary) => summary.id);
+      const starters: Project[] = [];
+      starterExamples.forEach((example, index) => {
+        const spec = validateSpec(example.data).spec;
+        if (!spec) return;
+        const id = projectId(new Date(now), ids);
+        ids.push(id);
+        // A second apart keeps the newest-first list in starter order.
+        starters.push(createProject(id, "example", { spec, prompt: "" }, new Date(now - index * 1000), example.id));
+      });
+      try {
+        for (const project of starters) await save(project);
+      } catch (error) {
+        set({ error: `起步作品没能存下来：${String(error)}` });
+      }
+      await get().refresh();
+    },
     addEdit: async (input) => {
       const open = get().project;
       if (!open) return;
@@ -141,9 +164,9 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       if (!wasOpen) return;
       const newest = get().projects[0];
       if (newest) return get().open(newest.id);
+      // Nothing left: an empty canvas; removed starters do not come back.
       set({ project: null });
-      const first = examples[0];
-      if (first) useModelStore.getState().loadSpec(first.data, first.id);
+      useModelStore.getState().clear();
     },
     close: () => set({ project: null, error: null }),
   };

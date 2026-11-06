@@ -25,6 +25,7 @@ const degrees = (radians: number) => Math.round((((radians * 180) / Math.PI) % 3
 export function Viewport() {
   const spec = useModelStore((state) => state.spec);
   const grid = useModelStore((state) => state.grid);
+  const issues = useModelStore((state) => state.issues);
   const camera = useModelStore((state) => state.camera);
   const selectedPart = useModelStore((state) => state.selectedPart);
   const { orbit, pan, setView, resetCamera, clearSelection } = useModelStore.getState();
@@ -116,7 +117,9 @@ export function Viewport() {
             onContextMenu={(event) => event.preventDefault()}
           />
         ) : (
-          <p className="preview__empty">没有可显示的模型，问题见右侧校验。</p>
+          <p className="preview__empty">
+            {issues.length > 0 ? "没有可显示的模型，问题见右侧校验。" : "还没有模型，在左下角描述一个新模型。"}
+          </p>
         )}
       </div>
       <div className="preview__label">{viewLabel}</div>

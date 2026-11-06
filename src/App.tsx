@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { isTauri } from "@tauri-apps/api/core";
+import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { ExamplePanel } from "./components/ExamplePanel";
 import { Inspector } from "./components/Inspector";
@@ -16,18 +16,22 @@ export default function App() {
   const loadSpec = useModelStore((state) => state.loadSpec);
   const settingsOpen = useSettingsStore((state) => state.open);
 
-  // Reopens the most recently changed project; the first example stands in when there is none.
+  // Reopens the most recently changed project. The very first run adds the starter
+  // projects; with none left the canvas stays empty. The browser build has no
+  // projects, so it shows one example.
   useEffect(() => {
-    const showExample = () => {
+    if (!isTauri()) {
       const first = examples[0];
       if (first) loadSpec(first.data, first.id);
-    };
-    if (!isTauri()) return showExample();
-    const { refresh, open } = useProjectStore.getState();
-    void refresh().then(() => {
+      return;
+    }
+    void (async () => {
+      const store = useProjectStore.getState();
+      await store.refresh();
+      if (await invoke<boolean>("take_first_run").catch(() => false)) await store.addStarters();
       const newest = useProjectStore.getState().projects[0];
-      return newest ? open(newest.id) : showExample();
-    });
+      if (newest) await store.open(newest.id);
+    })();
   }, [loadSpec]);
 
   // The app menu's 设置… item (⌘,) lives on the native side.

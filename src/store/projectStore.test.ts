@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { createProject } from "../core/project";
 import { validateSpec } from "../core/spec";
 import type { VoxelSpec } from "../core/types";
-import { examples } from "../prompts/examples";
+import { examples, starterExamples } from "../prompts/examples";
 import { useModelStore } from "./modelStore";
 import { useProjectStore } from "./projectStore";
 import type { ProjectSummary } from "./projectStore";
@@ -115,13 +115,15 @@ describe("projectStore", () => {
     expect(store.getState().project?.id).toBe(kept.id);
   });
 
-  it("falls back to an example after the last project goes", async () => {
+  it("leaves an empty canvas after the last project goes", async () => {
     const only = createProject("20261105-2307", "generate", { spec: basketball, prompt: "" }, startedAt);
     answer({ load_project: JSON.parse(JSON.stringify(only)), list_projects: [] });
     await store.getState().open(only.id);
     await store.getState().remove(only.id);
+    expect(saved()).toHaveLength(0);
     expect(store.getState().project).toBeNull();
-    expect(useModelStore.getState().modelId).toBe(examples[0]?.id);
+    expect(useModelStore.getState().spec).toBeNull();
+    expect(useModelStore.getState().issues).toEqual([]);
   });
 
   it("keeps the project when the Trash refuses it", async () => {
@@ -134,7 +136,7 @@ describe("projectStore", () => {
     useModelStore.getState().loadSpec(basketball, "20261105-2307");
     answer({ list_projects: [] });
     await store.getState().remove("20261105-2307");
-    expect(useModelStore.getState().modelId).toBe(examples[0]?.id);
+    expect(useModelStore.getState().spec).toBeNull();
   });
 
   it("adds an edit as the current version and saves it", async () => {
@@ -163,5 +165,18 @@ describe("projectStore", () => {
     // Picking the version already shown saves nothing.
     await store.getState().select(1);
     expect(saved()).toHaveLength(2);
+  });
+
+  it("adds the starters as ordinary projects", async () => {
+    answer({ list_projects: [] });
+    await store.getState().addStarters();
+    const projects = mocked.mock.calls
+      .filter(([command]) => command === "save_project")
+      .map(([, args]) => (args as { project: { id: string; from: string; updatedAt: string } }).project);
+    expect(projects.map((p) => p.from)).toEqual(["basketball", "volvo"]);
+    expect(starterExamples.map((e) => e.id)).toEqual(["basketball", "volvo"]);
+    expect(new Set(projects.map((p) => p.id)).size).toBe(2);
+    // The first starter is the newest, so it heads the list.
+    expect(Date.parse(projects[0]!.updatedAt)).toBeGreaterThan(Date.parse(projects[1]!.updatedAt));
   });
 });

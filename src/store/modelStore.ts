@@ -19,6 +19,8 @@ interface ModelState {
   loadSpec: (input: unknown, id?: string) => void;
   togglePart: (index: number) => void;
   clearSelection: () => void;
+  /** Shows nothing, e.g. when no project is left. */
+  clear: () => void;
   /** Turns the camera by radians; pitch stays between level and straight down. */
   orbit: (dYaw: number, dPitch: number) => void;
   /** Moves the view by CSS pixels. */
@@ -52,6 +54,7 @@ export const useModelStore = create<ModelState>((set) => ({
   },
   togglePart: (index) => set((state) => ({ selectedPart: state.selectedPart === index ? null : index })),
   clearSelection: () => set({ selectedPart: null }),
+  clear: () => set({ spec: null, modelId: null, grid: null, issues: [], selectedPart: null }),
   orbit: (dYaw, dPitch) =>
     set(({ camera }) => ({ camera: { ...camera, yaw: camera.yaw + dYaw, pitch: clampPitch(camera.pitch + dPitch) } })),
   pan: (dx, dy) => set(({ camera }) => ({ camera: { ...camera, panX: camera.panX + dx, panY: camera.panY + dy } })),
