@@ -5,7 +5,8 @@ mod settings;
 
 use std::path::{Path, PathBuf};
 
-use tauri::{AppHandle, Manager};
+use tauri::menu::{Menu, MenuItem, MenuItemKind, PredefinedMenuItem};
+use tauri::{AppHandle, Emitter, Manager};
 
 fn find_app() -> Result<PathBuf, String> {
     magicavoxel::find_app(Path::new(magicavoxel::APPLICATIONS))
@@ -93,8 +94,26 @@ fn restart_magicavoxel(file: String) -> Result<(), String> {
     magicavoxel::restart(&find_app()?, stem)
 }
 
+/// Adds 设置… (⌘,) to the default app menu, after About, where Mac apps keep it.
+fn add_settings_item(app: &tauri::App) -> tauri::Result<()> {
+    let menu = Menu::default(app.handle())?;
+    if let Some(MenuItemKind::Submenu(app_menu)) = menu.items()?.into_iter().next() {
+        let settings = MenuItem::with_id(app, "settings", "设置…", true, Some("CmdOrCtrl+,"))?;
+        app_menu.insert(&settings, 2)?;
+        app_menu.insert(&PredefinedMenuItem::separator(app)?, 3)?;
+    }
+    app.set_menu(menu)?;
+    Ok(())
+}
+
 fn main() {
     tauri::Builder::default()
+        .setup(|app| Ok(add_settings_item(app)?))
+        .on_menu_event(|app, event| {
+            if event.id().as_ref() == "settings" {
+                let _ = app.emit("open-settings", ());
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             claude_status,
             generate,
