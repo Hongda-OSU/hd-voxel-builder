@@ -86,37 +86,21 @@ ul {
   font-size: 12px;
 }
 
-.title-bar {
-  position: relative;
-}
-
-.title-bar > .title-bar__tools {
-  pointer-events: auto;
-}
-
-.title-bar__tools {
-  position: absolute;
-  top: 50%;
-  right: 12px;
-  display: flex;
-  gap: 6px;
-  transform: translateY(-50%);
-}
-
 /* Model picker */
 
+/* Sits in the composer bar, left of the send button; the menu opens upward. */
 .picker {
   position: relative;
 }
 
 .picker__button {
-  height: 26px;
-  padding: 0 8px;
+  height: 22px;
+  padding: 0 6px;
   border: 0;
   border-radius: 6px;
   background: transparent;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .picker__button:hover:not(:disabled),
@@ -132,7 +116,7 @@ ul {
 
 .picker__menu {
   position: absolute;
-  top: calc(100% + 6px);
+  bottom: calc(100% + 8px);
   right: 0;
   z-index: 20;
   width: 200px;
@@ -363,6 +347,7 @@ ul {
 .composer__styles {
   display: flex;
   gap: 4px;
+  margin-right: auto;
 }
 
 .composer__pill {
@@ -391,7 +376,6 @@ ul {
 .composer__send {
   width: 28px;
   height: 28px;
-  margin-left: auto;
   display: grid;
   place-items: center;
   border: 0;

@@ -3,6 +3,7 @@ import { isTauri } from "@tauri-apps/api/core";
 import type { Style } from "../core/types";
 import { useGenerateStore } from "../store/generateStore";
 import type { ClaudeStatus, GeneratePhase } from "../store/generateStore";
+import { ModelPicker } from "./ModelPicker";
 
 const STYLE_OPTIONS: { id: Style; label: string; note: string }[] = [
   { id: "chibi", label: "Q 版", note: "Q 版人物，默认画布 26 × 16 × 36" },
@@ -97,6 +98,7 @@ export function GeneratePanel() {
               </button>
             ))}
           </div>
+          {native && <ModelPicker />}
           {generating ? (
             <button type="button" className="composer__send" aria-label="停止生成" title="停止生成" onClick={() => void cancel()}>
               <svg viewBox="0 0 12 12" aria-hidden="true">
