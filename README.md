@@ -7,8 +7,8 @@ A local macOS app that turns a short description into a voxel model with Claude,
 ## Features
 
 - Generate original chibi characters and objects from a description, with Opus or Sonnet; a result that fails validation is retried once.
-- Inspect models in an orbiting 3D viewport with part highlighting.
-- Check models for bounds, colors, duplicate names, and floating parts.
+- Refine a model through conversation: every version is saved with the parts it changed, and any version can be reopened.
+- Inspect models in an orbiting 3D viewport with part highlighting and checks for bounds, colors, names, and floating parts.
 - Send `.vox` files to MagicaVoxel's project list, restarting it after confirmation.
 
 ## Tech Stack
@@ -46,7 +46,9 @@ pnpm dev    # Run the desktop app
 pnpm build  # Build src-tauri/target/release/bundle/macos/HD Voxel Builder.app
 ```
 
-Pick a style, write a description, and press Return to generate (Shift+Return adds a line). Each result is saved to `~/HDVoxel/projects/<id>/`, and the newest one reopens at launch; click the file name under the export button to show it in Finder. **在 MagicaVoxel 中打开** writes the model into MagicaVoxel's model folder (change it with ⌘,) and restarts MagicaVoxel; then click the file in its Project list.
+Pick a style, write a description, and press Return to generate (Shift+Return adds a line). Every project is saved with all its versions to `~/HDVoxel/projects/<id>/`. With a project open, the same box takes edit requests such as 「车斗再长两格」, and clicking an older version returns to it. The newest project reopens at launch; the first launch adds a basketball and a car to start from.
+
+Click the file name under the export button to show the `.vox` in Finder, or hover a project in the list to move it to the Trash. **在 MagicaVoxel 中打开** writes the model into MagicaVoxel's model folder (change it with ⌘,) and restarts MagicaVoxel; then click the file in its Project list.
 
 To try prompts without the app, `pnpm gen` saves a spec to `src/prompts/examples/<slug>-<model>.local.json`, which git ignores:
 
