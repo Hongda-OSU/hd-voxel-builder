@@ -51,6 +51,12 @@ fn save_project(id: String, project: serde_json::Value, vox: Vec<u8>) -> Result<
     projects::save(&projects_root()?, &id, &project, &vox)
 }
 
+/// True once per projects folder, so the starter projects are added only the first time.
+#[tauri::command]
+fn take_first_run() -> Result<bool, String> {
+    projects::take_first_run(&projects_root()?)
+}
+
 /// Moves a project folder to the Trash; Finder can put it back.
 #[tauri::command(async)]
 fn trash_project(id: String) -> Result<(), String> {
@@ -170,7 +176,8 @@ fn main() {
             load_project,
             save_project,
             reveal_project_file,
-            trash_project
+            trash_project,
+            take_first_run
         ])
         .run(tauri::generate_context!())
         .expect("failed to run HD Voxel Builder");

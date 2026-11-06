@@ -93,6 +93,21 @@ fn write_atomic(path: &Path, bytes: &[u8]) -> Result<(), String> {
         .map_err(|error| format!("写不进 {}：{error}", path.display()))
 }
 
+const STARTERS_MARK: &str = ".starters-added";
+
+/// True the first time it is called for `root`: the starter projects are added
+/// once, so deleting them for good is possible. The mark is a hidden file, which
+/// `list` skips because its name is not a valid id.
+pub fn take_first_run(root: &Path) -> Result<bool, String> {
+    let mark = root.join(STARTERS_MARK);
+    if mark.exists() {
+        return Ok(false);
+    }
+    fs::create_dir_all(root).map_err(|error| format!("建不了作品目录：{error}"))?;
+    fs::write(&mark, b"").map_err(|error| format!("写不进 {}：{error}", mark.display()))?;
+    Ok(true)
+}
+
 /// The saved .vox of a project, if it exists.
 pub fn vox_path(root: &Path, id: &str) -> Result<PathBuf, String> {
     check_id(id)?;
@@ -281,6 +296,15 @@ mod tests {
         );
         assert!(trash(&root, "../a", record).is_err());
         assert_eq!(moved.borrow().len(), 1);
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn reports_the_first_run_once() {
+        let root = temp_root("first-run");
+        assert!(take_first_run(&root).unwrap());
+        assert!(!take_first_run(&root).unwrap());
+        assert!(list(&root).is_empty());
         let _ = fs::remove_dir_all(&root);
     }
 
