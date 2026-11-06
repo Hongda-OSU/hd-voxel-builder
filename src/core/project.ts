@@ -21,6 +21,8 @@ export interface Version {
   model?: ModelName;
   seconds?: number;
   retried: boolean;
+  /** True when the project's reference images went with the request. */
+  attached?: boolean;
   createdAt: string;
   spec: VoxelSpec;
   changes: Changes;
@@ -37,6 +39,8 @@ export interface Project {
   current: number;
   /** The example a project was copied from. */
   from?: string;
+  /** Reference image files in refs/, e.g. ["1.png", "2.jpg"]. */
+  refs?: string[];
   versions: Version[];
 }
 
@@ -47,6 +51,7 @@ export interface VersionInput {
   model?: ModelName;
   seconds?: number;
   retried?: boolean;
+  attached?: boolean;
 }
 
 const two = (n: number) => String(n).padStart(2, "0");
@@ -97,13 +102,24 @@ export function currentVersion(project: Project): Version | undefined {
   return project.versions.find((version) => version.n === project.current);
 }
 
+/** Fields both kinds of version take from a VersionInput. */
+function inputFields(input: VersionInput) {
+  return {
+    prompt: input.prompt,
+    ...(input.model ? { model: input.model } : {}),
+    ...(input.seconds !== undefined ? { seconds: input.seconds } : {}),
+    retried: input.retried ?? false,
+    ...(input.attached ? { attached: true } : {}),
+  };
+}
+
 /** A new project whose first version is a generation or a copied example. */
 export function createProject(
   id: string,
   kind: "generate" | "example",
   input: VersionInput,
   now: Date,
-  from?: string,
+  { from, refs }: { from?: string; refs?: string[] } = {},
 ): Project {
   const at = localIso(now);
   return {
@@ -115,14 +131,12 @@ export function createProject(
     updatedAt: at,
     current: 1,
     ...(from ? { from } : {}),
+    ...(refs && refs.length > 0 ? { refs } : {}),
     versions: [
       {
         n: 1,
         kind,
-        prompt: input.prompt,
-        ...(input.model ? { model: input.model } : {}),
-        ...(input.seconds !== undefined ? { seconds: input.seconds } : {}),
-        retried: input.retried ?? false,
+        ...inputFields(input),
         createdAt: at,
         spec: input.spec,
         changes: NO_CHANGES,
@@ -141,10 +155,7 @@ export function addEdit(project: Project, input: VersionInput, now: Date): Proje
     n,
     kind: "edit",
     base: base.n,
-    prompt: input.prompt,
-    ...(input.model ? { model: input.model } : {}),
-    ...(input.seconds !== undefined ? { seconds: input.seconds } : {}),
-    retried: input.retried ?? false,
+    ...inputFields(input),
     createdAt: at,
     spec: input.spec,
     changes: diffParts(base.spec, input.spec),
@@ -165,12 +176,13 @@ const KINDS: VersionKind[] = ["generate", "edit", "example"];
 
 function parseVersion(input: unknown): Version | null {
   if (!isObject(input)) return null;
-  const { n, kind, base, prompt, model, seconds, retried, createdAt, spec, changes } = input;
+  const { n, kind, base, prompt, model, seconds, retried, attached, createdAt, spec, changes } = input;
   if (!Number.isInteger(n) || !KINDS.includes(kind as VersionKind)) return null;
   if (base !== undefined && !Number.isInteger(base)) return null;
   if (typeof prompt !== "string" || typeof retried !== "boolean" || typeof createdAt !== "string") return null;
   if (model !== undefined && model !== "opus" && model !== "sonnet") return null;
   if (seconds !== undefined && typeof seconds !== "number") return null;
+  if (attached !== undefined && typeof attached !== "boolean") return null;
   if (!isObject(changes) || !isStrings(changes.added) || !isStrings(changes.removed) || !isStrings(changes.changed)) {
     return null;
   }
@@ -182,10 +194,11 @@ function parseVersion(input: unknown): Version | null {
 /** Checks a project.json read from disk; null when it cannot be opened. */
 export function parseProject(input: unknown): Project | null {
   if (!isObject(input) || input.format !== 1) return null;
-  const { id, name, style, createdAt, updatedAt, current, from, versions } = input;
+  const { id, name, style, createdAt, updatedAt, current, from, refs, versions } = input;
   if (typeof id !== "string" || typeof name !== "string" || !STYLES.includes(style as Style)) return null;
   if (typeof createdAt !== "string" || typeof updatedAt !== "string" || !Number.isInteger(current)) return null;
   if (from !== undefined && typeof from !== "string") return null;
+  if (refs !== undefined && !isStrings(refs)) return null;
   if (!Array.isArray(versions) || versions.length === 0 || !versions.every((v) => parseVersion(v))) return null;
   const project = input as unknown as Project;
   return currentVersion(project) ? project : null;

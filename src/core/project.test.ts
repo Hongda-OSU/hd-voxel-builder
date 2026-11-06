@@ -89,9 +89,21 @@ describe("project versions", () => {
   });
 
   it("records the example a project was copied from", () => {
-    const copy = createProject("20261105-1500", "example", { spec: basketball, prompt: "" }, at(0), "basketball");
+    const copy = createProject("20261105-1500", "example", { spec: basketball, prompt: "" }, at(0), { from: "basketball" });
     expect(copy.from).toBe("basketball");
     expect(copy.versions[0]).not.toHaveProperty("model");
+    expect(copy).not.toHaveProperty("refs");
+  });
+
+  it("records reference images and which versions sent them", () => {
+    const withRefs = createProject("20261105-1600", "generate", { spec: basketball, prompt: "邮筒", attached: true }, at(0), {
+      refs: ["1.jpg", "2.png"],
+    });
+    expect(withRefs.refs).toEqual(["1.jpg", "2.png"]);
+    expect(withRefs.versions[0]?.attached).toBe(true);
+    const edited = addEdit(withRefs, { spec: basketball, prompt: "再高一点" }, at(1));
+    expect(edited.versions[1]).not.toHaveProperty("attached");
+    expect(edited.refs).toEqual(["1.jpg", "2.png"]);
   });
 });
 
@@ -104,6 +116,12 @@ describe("parseProject", () => {
     expect(parseProject(saved)?.name).toBe("篮球");
   });
 
+  it("accepts reference images, and older files without them", () => {
+    const versions = (saved as { versions: object[] }).versions.map((v) => ({ ...v, attached: true }));
+    expect(parseProject({ ...(saved as object), refs: ["1.png"], versions })?.refs).toEqual(["1.png"]);
+    expect(parseProject({ ...(saved as object), versions: versions.map((v) => ({ ...v, attached: "yes" })) })).toBeNull();
+  });
+
   it("rejects broken files", () => {
     const broken = (patch: object) => parseProject({ ...(saved as object), ...patch });
     expect(parseProject(null)).toBeNull();
@@ -111,6 +129,8 @@ describe("parseProject", () => {
     expect(broken({ style: "anime" })).toBeNull();
     expect(broken({ current: 5 })).toBeNull();
     expect(broken({ versions: [] })).toBeNull();
+    expect(broken({ refs: "1.png" })).toBeNull();
+    expect(broken({ refs: [1] })).toBeNull();
     expect(broken({ versions: [{ n: 1, kind: "generate", prompt: "", retried: false, createdAt: "", spec: {} }] })).toBeNull();
   });
 });

@@ -130,7 +130,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         const id = projectId(new Date(now), ids);
         ids.push(id);
         // A second apart keeps the newest-first list in starter order.
-        starters.push(createProject(id, "example", { spec, prompt: "" }, new Date(now - index * 1000), example.id));
+        starters.push(createProject(id, "example", { spec, prompt: "" }, new Date(now - index * 1000), { from: example.id }));
       });
       try {
         for (const project of starters) await save(project);
