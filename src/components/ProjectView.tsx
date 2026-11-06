@@ -105,7 +105,7 @@ export function ProjectView({ project }: { project: Project }) {
                   {version.attached && <em className="version__attached"> · 附图</em>}
                 </span>
               </span>
-              <span className="version__prompt">
+              <span className="version__prompt" title={version.prompt || undefined}>
                 {version.prompt || (version.kind === "example" ? "app 自带的作品" : "（没有描述）")}
               </span>
               <span className="version__changes">

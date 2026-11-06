@@ -420,8 +420,14 @@ ul {
   font-style: normal;
 }
 
+/* Keeps a drafted description's lines but shows only three; the title has the rest. */
 .version__prompt {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
   line-height: 1.5;
+  white-space: pre-line;
   overflow-wrap: anywhere;
 }
 
