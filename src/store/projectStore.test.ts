@@ -88,4 +88,17 @@ describe("projectStore", () => {
     expect(store.getState().project).toBeNull();
     expect(store.getState().error).toContain("格式不对");
   });
+
+  it("drops a project deleted outside the app", async () => {
+    const project = createProject("20261105-2307", "generate", { spec: basketball, prompt: "" }, startedAt);
+    answer({ load_project: JSON.parse(JSON.stringify(project)), list_projects: [summary("20261105-2307", project.updatedAt)] });
+    await store.getState().refresh();
+    await store.getState().open("20261105-2307");
+
+    answer({ load_project: new Error("读不到作品「20261105-2307」"), list_projects: [] });
+    await store.getState().open("20261105-2307");
+    expect(store.getState().projects).toEqual([]);
+    expect(store.getState().project).toBeNull();
+    expect(store.getState().error).toContain("读不到作品");
+  });
 });

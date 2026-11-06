@@ -12,9 +12,14 @@ function RecentList() {
   const projects = useProjectStore((state) => state.projects);
   const openId = useProjectStore((state) => state.project?.id);
   const open = useProjectStore((state) => state.open);
-  // Reads the folder itself too, so the list survives a reload of the store.
+  // Rereads the folder on mount and whenever the window comes back to the front,
+  // so projects changed in Finder show up or disappear.
   useEffect(() => {
-    if (isTauri()) void useProjectStore.getState().refresh();
+    if (!isTauri()) return;
+    const refresh = () => void useProjectStore.getState().refresh();
+    refresh();
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
   }, []);
   const colors = useMemo(() => new Map(projects.map((p) => [p.id, mainColor(p.spec)])), [projects]);
   if (projects.length === 0) return null;

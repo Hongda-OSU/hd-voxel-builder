@@ -55,7 +55,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   refresh: async () => {
     try {
       const projects = await invoke<ProjectSummary[]>("list_projects");
-      set({ projects: [...projects].sort(newestFirst), error: null });
+      // A project removed outside the app (say, in Finder) is no longer open.
+      const open = get().project;
+      const gone = open !== null && !projects.some((summary) => summary.id === open.id);
+      set({ projects: [...projects].sort(newestFirst), error: null, ...(gone ? { project: null } : {}) });
     } catch (error) {
       set({ error: String(error) });
     }
@@ -67,7 +70,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({ project, error: null });
       show(project);
     } catch (error) {
-      set({ error: error instanceof Error ? error.message : String(error) });
+      // The list may be stale: reread it, then keep the reason visible.
+      const message = error instanceof Error ? error.message : String(error);
+      await get().refresh();
+      set({ error: message });
     }
   },
   createFromGeneration: async (input, startedAt) => {
