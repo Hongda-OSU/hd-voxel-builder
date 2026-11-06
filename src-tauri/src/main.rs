@@ -45,10 +45,33 @@ fn load_project(id: String) -> Result<serde_json::Value, String> {
     projects::load(&projects_root()?, &id)
 }
 
-/// Saves project.json and the current version's .vox.
+/// Saves project.json, the current version's .vox and any new reference images.
 #[tauri::command(async)]
-fn save_project(id: String, project: serde_json::Value, vox: Vec<u8>) -> Result<(), String> {
-    projects::save(&projects_root()?, &id, &project, &vox)
+fn save_project(
+    id: String,
+    project: serde_json::Value,
+    vox: Vec<u8>,
+    refs: Option<Vec<projects::RefFile>>,
+) -> Result<(), String> {
+    let refs = refs.unwrap_or_default();
+    projects::save(&projects_root()?, &id, &project, &vox, &refs)
+}
+
+/// A project's reference images, in the order project.json lists them.
+#[tauri::command(async)]
+fn load_refs(id: String) -> Result<Vec<projects::RefFile>, String> {
+    projects::load_refs(&projects_root()?, &id)
+}
+
+/// Opens a saved reference image in Preview.
+#[tauri::command]
+fn open_ref(id: String, name: String) -> Result<(), String> {
+    let path = projects::ref_path(&projects_root()?, &id, &name)?;
+    std::process::Command::new("open")
+        .arg(&path)
+        .status()
+        .map_err(|error| format!("打不开参考图：{error}"))
+        .map(|_| ())
 }
 
 /// True once per projects folder, so the starter projects are added only the first time.
@@ -175,6 +198,8 @@ fn main() {
             list_projects,
             load_project,
             save_project,
+            load_refs,
+            open_ref,
             reveal_project_file,
             trash_project,
             take_first_run

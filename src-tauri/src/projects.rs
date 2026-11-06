@@ -5,10 +5,11 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 const PROJECT_FILE: &str = "project.json";
+const REFS_DIR: &str = "refs";
 
 /// ~/HDVoxel/projects, or None when HOME is not set.
 pub fn root(home: Option<&Path>) -> Option<PathBuf> {
@@ -26,6 +27,27 @@ pub fn check_id(id: &str) -> Result<(), String> {
     } else {
         Err(format!("作品 id「{id}」只能用字母、数字和 -"))
     }
+}
+
+/// Reference image names, as the UI gives them: a number and `.png` or `.jpg`.
+pub fn check_ref_name(name: &str) -> Result<(), String> {
+    let valid = name.split_once('.').is_some_and(|(stem, ext)| {
+        (1..=3).contains(&stem.len())
+            && stem.chars().all(|c| c.is_ascii_digit())
+            && matches!(ext, "png" | "jpg")
+    });
+    if valid {
+        Ok(())
+    } else {
+        Err(format!("参考图文件名「{name}」不对"))
+    }
+}
+
+/// One reference image file in refs/, already shrunk by the UI.
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
+pub struct RefFile {
+    pub name: String,
+    pub bytes: Vec<u8>,
 }
 
 /// What the project list shows; the full file is loaded when one is opened.
@@ -159,17 +181,69 @@ pub fn move_to_trash(path: &Path) -> Result<(), String> {
     fs::rename(path, &target).map_err(|error| format!("移不到废纸篓：{error}"))
 }
 
-/// Saves project.json and the current version's .vox, named after the id.
-pub fn save(root: &Path, id: &str, project: &Value, vox: &[u8]) -> Result<(), String> {
+/// Saves project.json and the current version's .vox, named after the id,
+/// plus any reference images given; images already in refs/ are left alone.
+pub fn save(
+    root: &Path,
+    id: &str,
+    project: &Value,
+    vox: &[u8],
+    refs: &[RefFile],
+) -> Result<(), String> {
     check_id(id)?;
     if project["id"].as_str() != Some(id) {
         return Err("project.json 里的 id 和文件夹不一致".into());
     }
+    for file in refs {
+        check_ref_name(&file.name)?;
+    }
     let dir = root.join(id);
     fs::create_dir_all(&dir).map_err(|error| format!("建不了作品目录：{error}"))?;
+    if !refs.is_empty() {
+        let refs_dir = dir.join(REFS_DIR);
+        fs::create_dir_all(&refs_dir).map_err(|error| format!("建不了参考图目录：{error}"))?;
+        for file in refs {
+            write_atomic(&refs_dir.join(&file.name), &file.bytes)?;
+        }
+    }
     let text = serde_json::to_string_pretty(project).map_err(|error| error.to_string())?;
     write_atomic(&dir.join(PROJECT_FILE), text.as_bytes())?;
     write_atomic(&dir.join(format!("{id}.vox")), vox)
+}
+
+/// The reference images project.json lists, in its order. A listed file that
+/// is missing is skipped, so a lost image costs only its thumbnail.
+pub fn load_refs(root: &Path, id: &str) -> Result<Vec<RefFile>, String> {
+    let project = load(root, id)?;
+    let names = project["refs"]
+        .as_array()
+        .map(Vec::as_slice)
+        .unwrap_or_default();
+    let dir = root.join(id).join(REFS_DIR);
+    Ok(names
+        .iter()
+        .filter_map(Value::as_str)
+        .filter(|name| check_ref_name(name).is_ok())
+        .filter_map(|name| {
+            let bytes = fs::read(dir.join(name)).ok()?;
+            Some(RefFile {
+                name: name.to_owned(),
+                bytes,
+            })
+        })
+        .collect())
+}
+
+/// A saved reference image, if it exists.
+pub fn ref_path(root: &Path, id: &str, name: &str) -> Result<PathBuf, String> {
+    check_id(id)?;
+    check_ref_name(name)?;
+    let path = root.join(id).join(REFS_DIR).join(name);
+    if path.is_file() {
+        Ok(path)
+    } else {
+        Err(format!("找不到参考图「{name}」"))
+    }
 }
 
 #[cfg(test)]
@@ -221,7 +295,7 @@ mod tests {
     fn saves_loads_and_lists() {
         let root = temp_root("round-trip");
         let id = "20261105-1432";
-        save(&root, id, &project(id), b"VOX ").unwrap();
+        save(&root, id, &project(id), b"VOX ", &[]).unwrap();
 
         assert_eq!(load(&root, id).unwrap(), project(id));
         assert_eq!(
@@ -243,10 +317,10 @@ mod tests {
     fn overwrites_a_saved_project() {
         let root = temp_root("overwrite");
         let id = "20261105-1432";
-        save(&root, id, &project(id), b"old").unwrap();
+        save(&root, id, &project(id), b"old", &[]).unwrap();
         let mut next = project(id);
         next["current"] = json!(1);
-        save(&root, id, &next, b"new").unwrap();
+        save(&root, id, &next, b"new", &[]).unwrap();
         assert_eq!(load(&root, id).unwrap()["current"], 1);
         assert_eq!(list(&root)[0].spec["name"], "v1");
         let _ = fs::remove_dir_all(&root);
@@ -255,13 +329,13 @@ mod tests {
     #[test]
     fn refuses_mismatched_ids_and_skips_broken_folders() {
         let root = temp_root("broken");
-        assert!(save(&root, "a", &project("b"), b"").is_err());
-        assert!(save(&root, "../x", &project("../x"), b"").is_err());
+        assert!(save(&root, "a", &project("b"), b"", &[]).is_err());
+        assert!(save(&root, "../x", &project("../x"), b"", &[]).is_err());
 
         fs::create_dir_all(root.join("broken")).unwrap();
         fs::write(root.join("broken").join(PROJECT_FILE), "{").unwrap();
         fs::create_dir_all(root.join("empty")).unwrap();
-        save(&root, "good", &project("good"), b"").unwrap();
+        save(&root, "good", &project("good"), b"", &[]).unwrap();
         let ids: Vec<_> = list(&root).into_iter().map(|s| s.id).collect();
         assert_eq!(ids, ["good"]);
         assert!(load(&root, "broken").unwrap_err().contains("坏了"));
@@ -271,7 +345,7 @@ mod tests {
     #[test]
     fn finds_only_saved_vox_files() {
         let root = temp_root("vox-path");
-        save(&root, "a", &project("a"), b"VOX ").unwrap();
+        save(&root, "a", &project("a"), b"VOX ", &[]).unwrap();
         assert_eq!(vox_path(&root, "a").unwrap(), root.join("a").join("a.vox"));
         assert!(vox_path(&root, "missing").is_err());
         assert!(vox_path(&root, "../a").is_err());
@@ -281,7 +355,7 @@ mod tests {
     #[test]
     fn trashes_only_existing_projects() {
         let root = temp_root("trash");
-        save(&root, "a", &project("a"), b"").unwrap();
+        save(&root, "a", &project("a"), b"", &[]).unwrap();
         let moved = std::cell::RefCell::new(Vec::new());
         let record = |path: &Path| {
             moved.borrow_mut().push(path.to_path_buf());
@@ -305,6 +379,78 @@ mod tests {
         assert!(take_first_run(&root).unwrap());
         assert!(!take_first_run(&root).unwrap());
         assert!(list(&root).is_empty());
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn accepts_only_numbered_png_and_jpg_refs() {
+        for good in ["1.png", "2.jpg", "123.png"] {
+            assert!(check_ref_name(good).is_ok(), "{good}");
+        }
+        for bad in [
+            "",
+            "1",
+            ".png",
+            "a.png",
+            "1.gif",
+            "1.png.png",
+            "../1.png",
+            "1234.png",
+        ] {
+            assert!(check_ref_name(bad).is_err(), "{bad}");
+        }
+    }
+
+    #[test]
+    fn saves_and_loads_reference_images() {
+        let root = temp_root("refs");
+        let id = "a";
+        let mut with_refs = project(id);
+        with_refs["refs"] = json!(["1.png", "2.jpg", "3.png"]);
+        let files = [
+            RefFile {
+                name: "1.png".into(),
+                bytes: b"PNG".to_vec(),
+            },
+            RefFile {
+                name: "2.jpg".into(),
+                bytes: b"JPG".to_vec(),
+            },
+        ];
+        save(&root, id, &with_refs, b"", &files).unwrap();
+        // A later save without images keeps the ones on disk.
+        save(&root, id, &with_refs, b"", &[]).unwrap();
+
+        // 3.png is listed but missing, so it is skipped.
+        assert_eq!(load_refs(&root, id).unwrap(), files);
+        assert_eq!(
+            ref_path(&root, id, "2.jpg").unwrap(),
+            root.join(id).join("refs").join("2.jpg")
+        );
+        assert!(ref_path(&root, id, "3.png").is_err());
+        assert!(ref_path(&root, id, "../a.vox").is_err());
+        assert!(load_refs(&root, "missing").is_err());
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn refuses_bad_ref_names_before_writing() {
+        let root = temp_root("bad-refs");
+        let bad = [RefFile {
+            name: "../x.png".into(),
+            bytes: vec![],
+        }];
+        assert!(save(&root, "a", &project("a"), b"", &bad).is_err());
+        assert!(!root.join("a").exists());
+        assert!(load_refs(&root, "a").is_err());
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn loads_no_refs_for_older_projects() {
+        let root = temp_root("no-refs");
+        save(&root, "a", &project("a"), b"", &[]).unwrap();
+        assert!(load_refs(&root, "a").unwrap().is_empty());
         let _ = fs::remove_dir_all(&root);
     }
 
