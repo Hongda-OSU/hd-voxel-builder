@@ -20,6 +20,7 @@ const SCHEMA: &str = include_str!("../../src/prompts/tool.json");
 const EXAMPLE: &str = include_str!("../../src/prompts/examples/hd.json");
 const CHIBI: &str = include_str!("../../src/prompts/presets/chibi.md");
 const OBJECT: &str = include_str!("../../src/prompts/presets/object.md");
+const DIORAMA: &str = include_str!("../../src/prompts/presets/diorama.md");
 const REFERENCE: &str = include_str!("../../src/prompts/reference.md");
 const DESCRIBE: &str = include_str!("../../src/prompts/describe.md");
 
@@ -68,6 +69,7 @@ pub fn system_prompt(style: &str, with_images: bool) -> Result<String, String> {
     let preset = match style {
         "chibi" => CHIBI,
         "object" => OBJECT,
+        "diorama" => DIORAMA,
         _ => return Err(format!("还没有「{style}」的风格预设")),
     };
     let reference = if with_images {
@@ -342,7 +344,10 @@ mod tests {
                 .unwrap()
                 .contains("Style preset: object.")
         );
-        assert!(system_prompt("diorama", false).is_err());
+        let diorama = system_prompt("diorama", false).unwrap();
+        assert!(diorama.contains("Style preset: diorama"));
+        assert!(diorama.contains(r#"Set "style" to "diorama"."#));
+        assert!(system_prompt("anime", false).is_err());
     }
 
     #[test]

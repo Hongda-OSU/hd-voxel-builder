@@ -10,7 +10,7 @@ import { extname, resolve } from "node:path";
 import { parseArgs } from "node:util";
 
 const USAGE = `Usage:
-  pnpm gen <slug> --style chibi|object [--model sonnet|opus] [--image file]... "description"
+  pnpm gen <slug> --style chibi|object|diorama [--model sonnet|opus] [--image file]... "description"
   pnpm gen <slug> --describe [--model sonnet|opus] --image file...`;
 
 const MEDIA_TYPES = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp" };

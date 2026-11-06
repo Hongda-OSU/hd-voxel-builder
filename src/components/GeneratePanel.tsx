@@ -11,7 +11,7 @@ import { ModelPicker } from "./ModelPicker";
 const STYLE_OPTIONS: { id: Style; label: string; note: string }[] = [
   { id: "chibi", label: "Q 版", note: "Q 版人物，默认画布 26 × 16 × 36" },
   { id: "object", label: "物体", note: "物体，按真实比例，最长边 24–40" },
-  { id: "diorama", label: "场景", note: "场景小件，还没有预设" },
+  { id: "diorama", label: "场景", note: "场景小件，底板上最多 4 个物体，默认画布 32 × 32 × 24" },
 ];
 
 const CLAUDE_NOTES: Partial<Record<ClaudeStatus, string>> = {
@@ -160,13 +160,12 @@ export function GeneratePanel() {
     return () => window.clearInterval(timer);
   }, [generating]);
 
-  const activeStyle = project?.style ?? style;
   const canAsk = native && claude === "ready";
-  const ready = canAsk && activeStyle !== "diorama";
+  const ready = canAsk;
   const canGenerate = ready && !generating && description.trim() !== "";
   const blocked = !native
     ? "只能在桌面 app 里生成"
-    : (CLAUDE_NOTES[claude] ?? (activeStyle === "diorama" ? "还没有「场景小件」的风格预设" : undefined));
+    : CLAUDE_NOTES[claude];
   // A failed save or open outranks the generation note: the model on screen is not on disk.
   const status = blocked ?? projectError ?? phaseNote(phase, now, shownId);
   const isError = Boolean(blocked) || Boolean(projectError) || phase.step === "error";

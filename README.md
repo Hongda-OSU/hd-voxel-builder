@@ -6,7 +6,7 @@ A local macOS app that turns a short description into a voxel model with Claude,
 
 ## Features
 
-- Generate original chibi characters and objects from a description, with Opus or Sonnet; a result that fails validation is retried once.
+- Generate original chibi characters, objects and small scenes on a base from a description, with Opus or Sonnet; a result that fails validation is retried once.
 - Start from up to three reference images: Claude drafts a description from them, and they can go along with the request.
 - Refine a model through conversation: every version is saved with the parts it changed, and any version can be reopened.
 - Inspect models in an orbiting 3D viewport with part highlighting and checks for bounds, colors, names, and floating parts.
