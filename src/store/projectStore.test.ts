@@ -136,4 +136,15 @@ describe("projectStore", () => {
     await store.getState().remove("20261105-2307");
     expect(useModelStore.getState().modelId).toBe(examples[0]?.id);
   });
+
+  it("adds an edit as the current version and saves it", async () => {
+    const project = createProject("20261106-0900", "generate", { spec: basketball, prompt: "一个篮球" }, startedAt);
+    store.setState({ project });
+    answer({ list_projects: [summary(project.id, project.updatedAt)] });
+    const longer = { ...basketball, size: [28, 30, 28] as VoxelSpec["size"] };
+    await store.getState().addEdit({ spec: longer, prompt: "再长一点", model: "opus", seconds: 30 });
+    expect(store.getState().project?.current).toBe(2);
+    expect(useModelStore.getState().spec?.size).toEqual([28, 30, 28]);
+    expect(saved()).toHaveLength(1);
+  });
 });
