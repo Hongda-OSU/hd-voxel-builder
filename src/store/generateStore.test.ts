@@ -47,6 +47,7 @@ describe("generateStore", () => {
     expect(useModelStore.getState().modelId).toMatch(/^\d{8}-\d{4}$/);
     expect(saveCalls()).toHaveLength(1);
     expect(store.getState().phase).toMatchObject({ step: "done", retried: false });
+    expect(store.getState().description).toBe("");
   });
 
   it("retries once with the problems and the previous spec", async () => {
@@ -69,6 +70,7 @@ describe("generateStore", () => {
     mocked.mockRejectedValue("已取消");
     await store.getState().generate();
     expect(store.getState().phase).toEqual({ step: "error", message: "已取消" });
+    expect(store.getState().description).toBe("一个篮球");
   });
 
   it("needs a description", async () => {

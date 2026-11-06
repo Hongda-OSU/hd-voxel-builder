@@ -94,7 +94,8 @@ export const useGenerateStore = create<GenerateState>((set, get) => ({
         useProjectStore.getState().close();
         useModelStore.getState().loadSpec(spec);
       }
-      set({ phase: { step: "done", seconds, retried } });
+      // Like a chat input: a sent description is cleared; a failed one stays to retry.
+      set({ phase: { step: "done", seconds, retried }, description: "" });
     } catch (error) {
       set({ phase: { step: "error", message: String(error) } });
     }
