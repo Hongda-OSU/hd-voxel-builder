@@ -2,8 +2,10 @@ import type { Style } from "./types";
 
 /** At most this many reference images go with one request, as in the native check. */
 export const MAX_REFS = 3;
-/** Longest edge sent to Claude; larger images are scaled down, smaller ones kept. */
+/** Longest edge sent to Claude; larger images are scaled down. */
 export const MAX_EDGE = 1568;
+/** Smaller images, such as pixel-art sprites, are enlarged to at least this edge. */
+export const MIN_EDGE = 768;
 
 export type RefMediaType = "image/png" | "image/jpeg";
 
@@ -18,10 +20,19 @@ export interface SavedRef extends RefImage {
   name: string;
 }
 
-/** The size that fits within `max` on the longer edge, never larger than the original. */
-export function fitSize(width: number, height: number, max = MAX_EDGE): { width: number; height: number } {
-  const scale = Math.min(1, max / Math.max(width, height));
-  return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) };
+/**
+ * The size an image is sent at. Large ones shrink to MAX_EDGE. Small ones grow by a
+ * whole number, drawn without smoothing, so a sprite's pixels become clean squares
+ * Claude can make out; an 80-pixel character was too small to read.
+ */
+export function refSize(width: number, height: number): { width: number; height: number; smooth: boolean } {
+  const longest = Math.max(width, height);
+  if (longest > MAX_EDGE) {
+    const scale = MAX_EDGE / longest;
+    return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)), smooth: true };
+  }
+  const factor = longest < MIN_EDGE ? Math.max(1, Math.min(Math.ceil(MIN_EDGE / longest), Math.floor(MAX_EDGE / longest))) : 1;
+  return { width: width * factor, height: height * factor, smooth: factor === 1 };
 }
 
 /** PNG keeps transparency and hard pixel edges; photos go as JPEG. */

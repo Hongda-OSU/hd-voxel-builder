@@ -4,18 +4,30 @@ import {
   base64ToBytes,
   bytesToBase64,
   draftStyle,
-  fitSize,
+  refSize,
   mediaTypeOf,
   refFileName,
   refMediaType,
 } from "./refs";
 
 describe("reference images", () => {
-  it("shrinks only images larger than the limit", () => {
-    expect(fitSize(3000, 2000)).toEqual({ width: 1568, height: 1045 });
-    expect(fitSize(2000, 4000)).toEqual({ width: 784, height: 1568 });
-    expect(fitSize(584, 704)).toEqual({ width: 584, height: 704 });
-    expect(fitSize(10000, 1)).toEqual({ width: 1568, height: 1 });
+  it("shrinks large images smoothly", () => {
+    expect(refSize(3000, 2000)).toEqual({ width: 1568, height: 1045, smooth: true });
+    expect(refSize(2000, 4000)).toEqual({ width: 784, height: 1568, smooth: true });
+    expect(refSize(10000, 1)).toEqual({ width: 1568, height: 1, smooth: true });
+  });
+
+  it("keeps mid-sized images as they are", () => {
+    expect(refSize(768, 500)).toEqual({ width: 768, height: 500, smooth: true });
+    expect(refSize(1568, 1568)).toEqual({ width: 1568, height: 1568, smooth: true });
+  });
+
+  it("enlarges small images by a whole number without smoothing", () => {
+    expect(refSize(220, 180)).toEqual({ width: 880, height: 720, smooth: false });
+    expect(refSize(584, 704)).toEqual({ width: 1168, height: 1408, smooth: false });
+    // Never past the upper limit: 1000 × 2 would be 2000.
+    expect(refSize(700, 1000)).toEqual({ width: 700, height: 1000, smooth: true });
+    expect(refSize(1, 1)).toEqual({ width: 768, height: 768, smooth: false });
   });
 
   it("sends photos as JPEG and everything else as PNG", () => {
