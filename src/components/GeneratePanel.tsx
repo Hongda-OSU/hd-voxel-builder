@@ -90,7 +90,13 @@ export function GeneratePanel() {
           disabled={generating}
           onChange={(event) => setDescription(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === "Enter" && event.metaKey && canGenerate) void generate();
+            // Return sends and Shift+Return breaks the line, like a chat. While an input method
+            // is composing (pinyin), Return picks a candidate and must not send; WebKit reports
+            // that keystroke as keyCode 229 even when isComposing is already false.
+            const composing = event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229;
+            if (event.key !== "Enter" || event.shiftKey || composing) return;
+            event.preventDefault();
+            if (canGenerate) void generate();
           }}
         />
         <div className="composer__bar">
@@ -129,7 +135,7 @@ export function GeneratePanel() {
               type="button"
               className="composer__send"
               aria-label="生成"
-              title="生成（⌘↵）"
+              title="发送（↵）"
               disabled={!canGenerate}
               onClick={() => void generate()}
             >

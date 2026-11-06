@@ -46,7 +46,7 @@ pnpm dev    # Run the desktop app
 pnpm build  # Build src-tauri/target/release/bundle/macos/HD Voxel Builder.app
 ```
 
-Pick a style, write a description, and press ⌘↵ to generate. Each result is saved to `~/HDVoxel/projects/<id>/`, and the newest one reopens at launch; click the file name under the export button to show it in Finder. **在 MagicaVoxel 中打开** writes the model into MagicaVoxel's model folder (change it with ⌘,) and restarts MagicaVoxel; then click the file in its Project list.
+Pick a style, write a description, and press Return to generate (Shift+Return adds a line). Each result is saved to `~/HDVoxel/projects/<id>/`, and the newest one reopens at launch; click the file name under the export button to show it in Finder. **在 MagicaVoxel 中打开** writes the model into MagicaVoxel's model folder (change it with ⌘,) and restarts MagicaVoxel; then click the file in its Project list.
 
 To try prompts without the app, `pnpm gen` saves a spec to `src/prompts/examples/<slug>-<model>.local.json`, which git ignores:
 
