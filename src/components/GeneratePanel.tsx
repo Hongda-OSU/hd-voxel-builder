@@ -31,6 +31,10 @@ function phaseNote(phase: GeneratePhase, now: number, shownId: string | null): s
       // Only while its result is on screen; after switching models it would mislead.
       if (phase.id !== shownId) return "";
       return `${phase.editing ? "修改" : "生成"}完成，用了 ${phase.seconds} 秒${phase.retried ? "（重试了 1 次）" : ""}`;
+    case "describing":
+      return `正在看图写描述 · ${Math.max(0, Math.round((now - phase.startedAt) / 1000))} 秒`;
+    case "described":
+      return "描述写好了，改一改再发送";
     case "error":
       return phase.message;
   }

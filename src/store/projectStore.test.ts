@@ -40,7 +40,7 @@ const saved = () =>
 describe("projectStore", () => {
   beforeEach(() => {
     mocked.mockReset();
-    store.setState({ projects: [], project: null, error: null });
+    store.setState({ projects: [], project: null, refs: [], error: null });
     useModelStore.getState().loadSpec({ name: "none" });
   });
 
@@ -65,6 +65,52 @@ describe("projectStore", () => {
     // The same minute again gets a suffix, because the list now holds the first one.
     await store.getState().createFromGeneration({ spec: basketball, prompt: "又一个" }, startedAt);
     expect(saved().map((call) => call.id)).toEqual(["20261105-1432", "20261105-1432-2"]);
+  });
+
+  it("saves reference images with a new project as numbered files", async () => {
+    answer({ list_projects: [summary("20261105-1432", "2026-11-05T14:33:00-05:00")] });
+    const images = [
+      { mediaType: "image/jpeg" as const, data: btoa("JPG") },
+      { mediaType: "image/png" as const, data: btoa("PNG") },
+    ];
+    await store.getState().createFromGeneration({ spec: basketball, prompt: "邮筒" }, startedAt, images);
+    const [call] = mocked.mock.calls.filter(([command]) => command === "save_project");
+    const args = call?.[1] as { project: { refs: string[] }; refs: { name: string; bytes: number[] }[] };
+    expect(args.project.refs).toEqual(["1.jpg", "2.png"]);
+    expect(args.refs).toEqual([
+      { name: "1.jpg", bytes: [74, 80, 71] },
+      { name: "2.png", bytes: [80, 78, 71] },
+    ]);
+    expect(store.getState().refs.map((ref) => ref.name)).toEqual(["1.jpg", "2.png"]);
+  });
+
+  it("reads an opened project's reference images", async () => {
+    const project = createProject("20261105-1432", "generate", { spec: basketball, prompt: "" }, startedAt, {
+      refs: ["1.png"],
+    });
+    answer({ load_project: JSON.parse(JSON.stringify(project)), load_refs: [{ name: "1.png", bytes: [80, 78, 71] }] });
+    await store.getState().open("20261105-1432");
+    await vi.waitFor(() => expect(store.getState().refs).toHaveLength(1));
+    expect(store.getState().refs[0]).toEqual({ name: "1.png", mediaType: "image/png", data: btoa("PNG") });
+    store.getState().close();
+    expect(store.getState().refs).toEqual([]);
+  });
+
+  it("drops reference images that arrive after another project opened", async () => {
+    const withRefs = createProject("a", "generate", { spec: basketball, prompt: "" }, startedAt, { refs: ["1.png"] });
+    const other = createProject("b", "generate", { spec: basketball, prompt: "" }, startedAt);
+    let release: (files: unknown) => void = () => {};
+    mocked.mockImplementation(async (command: string, args?: unknown) => {
+      if (command === "load_project") return JSON.parse(JSON.stringify((args as { id: string }).id === "a" ? withRefs : other));
+      if (command === "load_refs") return new Promise((resolve) => (release = resolve));
+      return undefined;
+    });
+    await store.getState().open("a");
+    await store.getState().open("b");
+    release([{ name: "1.png", bytes: [1] }]);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(store.getState().project?.id).toBe("b");
+    expect(store.getState().refs).toEqual([]);
   });
 
   it("keeps showing the model when saving fails", async () => {
