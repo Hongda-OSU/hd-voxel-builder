@@ -13,7 +13,8 @@ export type ClaudeStatus = "unknown" | "ready" | "missing" | "loggedOut";
 export type GeneratePhase =
   | { step: "idle" }
   | { step: "generating"; attempt: 1 | 2; startedAt: number }
-  | { step: "done"; seconds: number; retried: boolean }
+  /** `id` is the model it produced, so the note can hide once another model is shown. */
+  | { step: "done"; seconds: number; retried: boolean; id: string | null }
   | { step: "error"; message: string };
 
 interface GenerateState {
@@ -95,7 +96,8 @@ export const useGenerateStore = create<GenerateState>((set, get) => ({
         useModelStore.getState().loadSpec(spec);
       }
       // Like a chat input: a sent description is cleared; a failed one stays to retry.
-      set({ phase: { step: "done", seconds, retried }, description: "" });
+      const id = useModelStore.getState().modelId;
+      set({ phase: { step: "done", seconds, retried, id }, description: "" });
     } catch (error) {
       set({ phase: { step: "error", message: String(error) } });
     }

@@ -3,6 +3,7 @@ import { isTauri } from "@tauri-apps/api/core";
 import type { Style } from "../core/types";
 import { useGenerateStore } from "../store/generateStore";
 import type { ClaudeStatus, GeneratePhase } from "../store/generateStore";
+import { useModelStore } from "../store/modelStore";
 import { useProjectStore } from "../store/projectStore";
 import { ModelPicker } from "./ModelPicker";
 
@@ -17,7 +18,7 @@ const CLAUDE_NOTES: Partial<Record<ClaudeStatus, string>> = {
   loggedOut: "Claude Code 没有登录。在终端里运行 claude 登录后再试。",
 };
 
-function phaseNote(phase: GeneratePhase, now: number): string {
+function phaseNote(phase: GeneratePhase, now: number, shownId: string | null): string {
   switch (phase.step) {
     case "idle":
       return "";
@@ -26,6 +27,8 @@ function phaseNote(phase: GeneratePhase, now: number): string {
       return phase.attempt === 1 ? `生成中 · ${seconds} 秒` : `校验没通过，正在重试 · ${seconds} 秒`;
     }
     case "done":
+      // Only while its result is on screen; after switching models it would mislead.
+      if (phase.id !== shownId) return "";
       return phase.retried ? `生成完成，用了 ${phase.seconds} 秒（重试了 1 次）` : `生成完成，用了 ${phase.seconds} 秒`;
     case "error":
       return phase.message;
@@ -37,6 +40,7 @@ export function GeneratePanel() {
   const { style, description, claude, phase } = useGenerateStore();
   const { setStyle, setDescription, checkClaude, generate, cancel } = useGenerateStore.getState();
   const projectError = useProjectStore((state) => state.error);
+  const shownId = useModelStore((state) => state.modelId);
   const native = isTauri();
   const generating = phase.step === "generating";
   const [now, setNow] = useState(() => Date.now());
@@ -58,7 +62,7 @@ export function GeneratePanel() {
     ? "只能在桌面 app 里生成"
     : (CLAUDE_NOTES[claude] ?? (style === "diorama" ? "还没有「场景小件」的风格预设" : undefined));
   // A failed save or open outranks the generation note: the model on screen is not on disk.
-  const status = blocked ?? projectError ?? phaseNote(phase, now);
+  const status = blocked ?? projectError ?? phaseNote(phase, now, shownId);
   const isError = Boolean(blocked) || Boolean(projectError) || phase.step === "error";
 
   return (

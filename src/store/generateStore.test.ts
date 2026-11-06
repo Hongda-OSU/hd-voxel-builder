@@ -47,6 +47,7 @@ describe("generateStore", () => {
     expect(useModelStore.getState().modelId).toMatch(/^\d{8}-\d{4}$/);
     expect(saveCalls()).toHaveLength(1);
     expect(store.getState().phase).toMatchObject({ step: "done", retried: false });
+    expect(store.getState().phase).toMatchObject({ id: useModelStore.getState().modelId });
     expect(store.getState().description).toBe("");
   });
 
