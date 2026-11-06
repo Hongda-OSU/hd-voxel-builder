@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { examples } from "../prompts/examples";
-import { blockingIssues, modelId, retryPrompt, useGenerateStore } from "./generateStore";
+import { blockingIssues, retryPrompt, useGenerateStore } from "./generateStore";
 import { useModelStore } from "./modelStore";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
@@ -20,8 +20,14 @@ const floating = {
 /** Answers `generate` with each spec in turn. */
 function replies(...specs: unknown[]) {
   const queue = [...specs];
-  mocked.mockImplementation(async (command: string) => (command === "generate" ? queue.shift() : undefined));
+  mocked.mockImplementation(async (command: string) => {
+    if (command === "generate") return queue.shift();
+    if (command === "list_projects") return [];
+    return undefined;
+  });
 }
+
+const saveCalls = () => mocked.mock.calls.filter(([command]) => command === "save_project");
 
 const generateCalls = () =>
   mocked.mock.calls.filter(([command]) => command === "generate").map(([, args]) => args as { text: string });
@@ -38,7 +44,8 @@ describe("generateStore", () => {
     await store.getState().generate();
     expect(generateCalls()).toEqual([{ text: "一个篮球", style: "object", model: "opus" }]);
     expect(useModelStore.getState().spec?.name).toBe("篮球");
-    expect(useModelStore.getState().modelId).toMatch(/^model-\d{4}-\d{4}$/);
+    expect(useModelStore.getState().modelId).toMatch(/^\d{8}-\d{4}$/);
+    expect(saveCalls()).toHaveLength(1);
     expect(store.getState().phase).toMatchObject({ step: "done", retried: false });
   });
 
@@ -99,7 +106,11 @@ describe("helpers", () => {
     expect(text.endsWith('{"a":1}')).toBe(true);
   });
 
-  it("names models by local date and time", () => {
-    expect(modelId(new Date(2026, 10, 5, 9, 7))).toBe("model-1105-0907");
+  it("does not save a result whose shape is broken", async () => {
+    replies({ name: "x" }, { name: "x" });
+    await store.getState().generate();
+    expect(saveCalls()).toHaveLength(0);
+    expect(useModelStore.getState().spec).toBeNull();
+    expect(store.getState().phase).toMatchObject({ step: "done", retried: true });
   });
 });

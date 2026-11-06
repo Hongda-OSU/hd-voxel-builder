@@ -9,15 +9,25 @@ import { StatusBar } from "./components/StatusBar";
 import { TitleBar } from "./components/TitleBar";
 import { examples } from "./prompts/examples";
 import { useModelStore } from "./store/modelStore";
+import { useProjectStore } from "./store/projectStore";
 import { useSettingsStore } from "./store/settingsStore";
 
 export default function App() {
   const loadSpec = useModelStore((state) => state.loadSpec);
   const settingsOpen = useSettingsStore((state) => state.open);
 
+  // Reopens the most recently changed project; the first example stands in when there is none.
   useEffect(() => {
-    const first = examples[0];
-    if (first) loadSpec(first.data, first.id);
+    const showExample = () => {
+      const first = examples[0];
+      if (first) loadSpec(first.data, first.id);
+    };
+    if (!isTauri()) return showExample();
+    const { refresh, open } = useProjectStore.getState();
+    void refresh().then(() => {
+      const newest = useProjectStore.getState().projects[0];
+      return newest ? open(newest.id) : showExample();
+    });
   }, [loadSpec]);
 
   // The app menu's 设置… item (⌘,) lives on the native side.

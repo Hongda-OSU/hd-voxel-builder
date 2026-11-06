@@ -1,5 +1,6 @@
 import { examples } from "../prompts/examples";
 import { useModelStore } from "../store/modelStore";
+import { useProjectStore } from "../store/projectStore";
 import { GeneratePanel } from "./GeneratePanel";
 
 export function ExamplePanel() {
@@ -14,18 +15,21 @@ export function ExamplePanel() {
           示例
         </h2>
         <ul className="example-list" aria-labelledby="examples-heading">
-        {examples.map((example) => (
-          <li key={example.id}>
-            <button
-              type="button"
-              className="example-list__item"
-              aria-pressed={example.id === modelId}
-              onClick={() => loadSpec(example.data, example.id)}
-            >
-              {example.id}
-            </button>
-          </li>
-        ))}
+          {examples.map((example) => (
+            <li key={example.id}>
+              <button
+                type="button"
+                className="example-list__item"
+                aria-pressed={example.id === modelId}
+                onClick={() => {
+                  useProjectStore.getState().close();
+                  loadSpec(example.data, example.id);
+                }}
+              >
+                {example.id}
+              </button>
+            </li>
+          ))}
         </ul>
       </div>
       <GeneratePanel />

@@ -1,11 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import { buildModel } from "../core/buildModel";
+import type { ModelName } from "../core/project";
 import { checkGrid, validateSpec } from "../core/spec";
 import type { Style } from "../core/types";
 import { useModelStore } from "./modelStore";
+import { useProjectStore } from "./projectStore";
 
-export type Model = "opus" | "sonnet";
+export type Model = ModelName;
 export type ClaudeStatus = "unknown" | "ready" | "missing" | "loggedOut";
 
 export type GeneratePhase =
@@ -50,12 +52,6 @@ export function retryPrompt(description: string, previous: unknown, problems: st
   ].join("\n");
 }
 
-/** An ASCII name for the exported file until projects are saved, e.g. model-1105-1043. */
-export function modelId(date: Date): string {
-  const two = (n: number) => String(n).padStart(2, "0");
-  return `model-${two(date.getMonth() + 1)}${two(date.getDate())}-${two(date.getHours())}${two(date.getMinutes())}`;
-}
-
 export const useGenerateStore = create<GenerateState>((set, get) => ({
   style: "chibi",
   description: "",
@@ -85,9 +81,20 @@ export const useGenerateStore = create<GenerateState>((set, get) => ({
         set({ phase: { step: "generating", attempt: 2, startedAt } });
         spec = await invoke<unknown>("generate", { text: retryPrompt(text, spec, problems), style, model });
       }
-      useModelStore.getState().loadSpec(spec, modelId(new Date(startedAt)));
       const seconds = Math.round((Date.now() - startedAt) / 1000);
-      set({ phase: { step: "done", seconds, retried: problems.length > 0 } });
+      const retried = problems.length > 0;
+      const valid = validateSpec(spec).spec;
+      if (valid) {
+        // A buildable result becomes a saved project, even with content problems left.
+        await useProjectStore
+          .getState()
+          .createFromGeneration({ spec: valid, prompt: text, model, seconds, retried }, new Date(startedAt));
+      } else {
+        // A broken shape shows its problems but has nothing worth saving.
+        useProjectStore.getState().close();
+        useModelStore.getState().loadSpec(spec);
+      }
+      set({ phase: { step: "done", seconds, retried } });
     } catch (error) {
       set({ phase: { step: "error", message: String(error) } });
     }

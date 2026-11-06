@@ -3,6 +3,7 @@ import { isTauri } from "@tauri-apps/api/core";
 import type { Style } from "../core/types";
 import { useGenerateStore } from "../store/generateStore";
 import type { ClaudeStatus, GeneratePhase } from "../store/generateStore";
+import { useProjectStore } from "../store/projectStore";
 import { ModelPicker } from "./ModelPicker";
 
 const STYLE_OPTIONS: { id: Style; label: string; note: string }[] = [
@@ -35,6 +36,7 @@ function phaseNote(phase: GeneratePhase, now: number): string {
 export function GeneratePanel() {
   const { style, description, claude, phase } = useGenerateStore();
   const { setStyle, setDescription, checkClaude, generate, cancel } = useGenerateStore.getState();
+  const projectError = useProjectStore((state) => state.error);
   const native = isTauri();
   const generating = phase.step === "generating";
   const [now, setNow] = useState(() => Date.now());
@@ -55,8 +57,9 @@ export function GeneratePanel() {
   const blocked = !native
     ? "只能在桌面 app 里生成"
     : (CLAUDE_NOTES[claude] ?? (style === "diorama" ? "还没有「场景小件」的风格预设" : undefined));
-  const status = blocked ?? phaseNote(phase, now);
-  const isError = Boolean(blocked) || phase.step === "error";
+  // A failed save or open outranks the generation note: the model on screen is not on disk.
+  const status = blocked ?? projectError ?? phaseNote(phase, now);
+  const isError = Boolean(blocked) || Boolean(projectError) || phase.step === "error";
 
   return (
     <div className="composer">
