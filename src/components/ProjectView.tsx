@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 import type { Project, Version } from "../core/project";
 import { useGenerateStore } from "../store/generateStore";
 import { useProjectStore } from "../store/projectStore";
-import { STYLE_LABELS } from "./labels";
 
 const KIND_LABELS: Record<Version["kind"], string> = { generate: "生成", edit: "修改", example: "自带" };
 const MODEL_LABELS = { opus: "Opus", sonnet: "Sonnet" } as const;
@@ -59,16 +58,12 @@ export function ProjectView({ project }: { project: Project }) {
 
   return (
     <>
+      {/* The style is in the title bar and the count in 版本 below, so the name gets the room. */}
       <div className="project-head">
         <button type="button" className="project-head__back" disabled={busy} onClick={close}>
           ‹ 作品
         </button>
-        <span className="project-head__name" title={project.name}>
-          {project.name}
-        </span>
-        <span className="project-head__meta">
-          {STYLE_LABELS[project.style]} · {project.versions.length} 版
-        </span>
+        <h2 className="project-head__name">{project.name}</h2>
       </div>
       <h2 className="panel__heading recent__heading" id="versions-heading">
         <span>版本</span>

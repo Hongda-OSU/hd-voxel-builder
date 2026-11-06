@@ -271,15 +271,15 @@ ul {
 
 .project-head {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px 10px 8px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 16px 12px 10px;
   border-bottom: 1px solid var(--line);
 }
 
 .project-head__back {
-  flex: none;
-  height: 24px;
+  align-self: flex-start;
+  height: 22px;
   padding: 0 6px;
   border: 0;
   border-radius: 6px;
@@ -298,19 +298,14 @@ ul {
   cursor: default;
 }
 
+/* Long names wrap instead of being cut off. */
 .project-head__name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
+  margin: 0;
+  padding-left: 6px;
+  font-size: 15px;
   font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.project-head__meta {
-  flex: none;
-  color: var(--muted);
-  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .versions {
