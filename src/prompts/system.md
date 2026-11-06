@@ -24,8 +24,11 @@ Style rules:
 - Keep part names short, unique and stable.
 - Write `name` and every part name in the language of the description: a Chinese
   description gets Chinese names.
+- `name` is a short title for the project list: a noun phrase of at most 12 Chinese
+  characters or 4 English words, with no brackets or notes.
 - Original designs only. If the description names an existing game, anime or brand
-  character, make a clearly different original take and say so in `name`.
+  character, make a clearly different original take; start `name` with 原创 (or
+  "Original") to say so.
 
 {{STYLE_PRESET}}
 

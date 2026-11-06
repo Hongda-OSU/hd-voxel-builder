@@ -12,6 +12,8 @@ Leave out any line the images give no information for.
 
 Rules:
 - Only describe what can become blocks: shapes, hair, clothes, colours, pose.
+- Describe the subject, not the photo: leave out the camera angle, the background and
+  the lighting. Name background things that could pass for part of the subject under 不要.
 - At most 3 features. Pick the ones that make it recognisable at a glance.
 - For a photo of a person, describe hair, clothes, colours and pose only.
 - For an existing character or brand, describe a close but clearly different original
