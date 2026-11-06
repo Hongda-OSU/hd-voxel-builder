@@ -64,11 +64,14 @@ export function ProjectView({ project }: { project: Project }) {
       {/* The style is in the title bar and the count in 版本 below, so the name gets the room. */}
       <div className="project-head">
         <button type="button" className="project-head__back" disabled={busy} onClick={close}>
-          ‹ 作品
+          <svg viewBox="0 0 10 10" aria-hidden="true">
+            <path d="M6.5 2L3.5 5l3 3" />
+          </svg>
+          作品
         </button>
         <h2 className="project-head__name">{project.name}</h2>
         {refs.length > 0 && (
-          <div className="project-head__refs">
+          <div className="project-head__refs" aria-label="参考图">
             {refs.map((ref, index) => (
               <button
                 key={ref.name}
@@ -80,7 +83,6 @@ export function ProjectView({ project }: { project: Project }) {
                 <img src={dataUrl(ref)} alt={`参考图 ${index + 1}`} />
               </button>
             ))}
-            <span>参考图 {refs.length} 张</span>
           </div>
         )}
       </div>
