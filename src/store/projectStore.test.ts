@@ -147,4 +147,21 @@ describe("projectStore", () => {
     expect(useModelStore.getState().spec?.size).toEqual([28, 30, 28]);
     expect(saved()).toHaveLength(1);
   });
+
+  it("switches versions without deleting any", async () => {
+    const first = createProject("20261106-0900", "generate", { spec: basketball, prompt: "" }, startedAt);
+    store.setState({ project: first });
+    answer({ list_projects: [summary(first.id, first.updatedAt)] });
+    const longer = { ...basketball, size: [28, 30, 28] as VoxelSpec["size"] };
+    await store.getState().addEdit({ spec: longer, prompt: "再长一点" });
+    await store.getState().select(1);
+    expect(store.getState().project?.current).toBe(1);
+    expect(store.getState().project?.versions).toHaveLength(2);
+    expect(useModelStore.getState().spec?.size).toEqual(basketball.size);
+    expect(saved()).toHaveLength(2);
+
+    // Picking the version already shown saves nothing.
+    await store.getState().select(1);
+    expect(saved()).toHaveLength(2);
+  });
 });

@@ -7,6 +7,7 @@ import {
   currentVersion,
   parseProject,
   projectId,
+  setCurrent,
 } from "../core/project";
 import type { Project, VersionInput } from "../core/project";
 import type { Style } from "../core/types";
@@ -38,6 +39,8 @@ interface ProjectState {
   createFromGeneration: (input: VersionInput, startedAt: Date) => Promise<void>;
   /** Adds a finished edit to the open project as its new current version. */
   addEdit: (input: VersionInput) => Promise<void>;
+  /** Shows another version of the open project; nothing is deleted. */
+  select: (n: number) => Promise<void>;
   /** Moves a project to the Trash; the open one gives way to the newest left. */
   remove: (id: string) => Promise<void>;
   /** Leaves the open project, e.g. when an example is picked. */
@@ -119,6 +122,11 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       const open = get().project;
       if (!open) return;
       await commit(appendEdit(open, input, new Date()), "改好了，但没存下来");
+    },
+    select: async (n) => {
+      const open = get().project;
+      if (!open || open.current === n) return;
+      await commit(setCurrent(open, n, new Date()), "切过去了，但没存下来");
     },
     remove: async (id) => {
       try {
