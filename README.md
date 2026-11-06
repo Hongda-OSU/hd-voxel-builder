@@ -7,6 +7,7 @@ A local macOS app that turns a short description into a voxel model with Claude,
 ## Features
 
 - Generate original chibi characters and objects from a description, with Opus or Sonnet; a result that fails validation is retried once.
+- Start from up to three reference images: Claude drafts a description from them, and they can go along with the request.
 - Refine a model through conversation: every version is saved with the parts it changed, and any version can be reopened.
 - Inspect models in an orbiting 3D viewport with part highlighting and checks for bounds, colors, names, and floating parts.
 - Send `.vox` files to MagicaVoxel's project list, restarting it after confirmation.
@@ -46,9 +47,9 @@ pnpm dev    # Run the desktop app
 pnpm build  # Build src-tauri/target/release/bundle/macos/HD Voxel Builder.app
 ```
 
-Pick a style, write a description, and press Return to generate (Shift+Return adds a line). Every project is saved with all its versions to `~/HDVoxel/projects/<id>/`. Click a project in the list to view it; its 修改 button (or a double-click) opens its versions, and the same box then takes edit requests such as 「车斗再长两格」. Clicking an older version returns to it. At launch the project you last had open reopens, or the newest one; the first launch adds a basketball and a car to start from.
+Pick a style, write a description, and press Return to generate (Shift+Return adds a line). To start from pictures, drop up to three images on the left column or paste them into the box, then click 看图写描述 for a draft to edit; with 附图 on, the images go with the request too. Every project is saved with all its versions to `~/HDVoxel/projects/<id>/`. Click a project in the list to view it; its 修改 button (or a double-click) opens its versions, and the same box then takes edit requests such as 「车斗再长两格」. Clicking an older version returns to it. At launch the project you last viewed is shown again, or the newest one; the first launch adds a basketball and a car to start from.
 
-Click the file name under the export button to show the `.vox` in Finder, or hover a project in the list to move it to the Trash. **在 MagicaVoxel 中打开** writes the model into MagicaVoxel's model folder (change it with ⌘,) and restarts MagicaVoxel; then click the file in its Project list.
+Click the file name under the export button to show the `.vox` in Finder, or the trash button on the chosen project to move it to the Trash. **在 MagicaVoxel 中打开** writes the model into MagicaVoxel's model folder (change it with ⌘,) and restarts MagicaVoxel; then click the file in its Project list.
 
 To try prompts without the app, `pnpm gen` saves a spec to `src/prompts/examples/<slug>-<model>.local.json`, which git ignores:
 
