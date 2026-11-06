@@ -51,6 +51,18 @@ fn save_project(id: String, project: serde_json::Value, vox: Vec<u8>) -> Result<
     projects::save(&projects_root()?, &id, &project, &vox)
 }
 
+/// Shows a project's .vox selected in Finder.
+#[tauri::command]
+fn reveal_project_file(id: String) -> Result<(), String> {
+    let path = projects::vox_path(&projects_root()?, &id)?;
+    std::process::Command::new("open")
+        .arg("-R")
+        .arg(&path)
+        .status()
+        .map_err(|error| format!("打不开 Finder：{error}"))
+        .map(|_| ())
+}
+
 /// MagicaVoxel's own model folder, or null when the app is not in /Applications.
 #[tauri::command]
 fn magicavoxel_model_dir() -> Option<String> {
@@ -150,7 +162,8 @@ fn main() {
             restart_magicavoxel,
             list_projects,
             load_project,
-            save_project
+            save_project,
+            reveal_project_file
         ])
         .run(tauri::generate_context!())
         .expect("failed to run HD Voxel Builder");

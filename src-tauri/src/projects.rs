@@ -93,6 +93,17 @@ fn write_atomic(path: &Path, bytes: &[u8]) -> Result<(), String> {
         .map_err(|error| format!("写不进 {}：{error}", path.display()))
 }
 
+/// The saved .vox of a project, if it exists.
+pub fn vox_path(root: &Path, id: &str) -> Result<PathBuf, String> {
+    check_id(id)?;
+    let path = root.join(id).join(format!("{id}.vox"));
+    if path.is_file() {
+        Ok(path)
+    } else {
+        Err(format!("作品「{id}」还没有存下 .vox"))
+    }
+}
+
 /// Saves project.json and the current version's .vox, named after the id.
 pub fn save(root: &Path, id: &str, project: &Value, vox: &[u8]) -> Result<(), String> {
     check_id(id)?;
@@ -199,6 +210,16 @@ mod tests {
         let ids: Vec<_> = list(&root).into_iter().map(|s| s.id).collect();
         assert_eq!(ids, ["good"]);
         assert!(load(&root, "broken").unwrap_err().contains("坏了"));
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn finds_only_saved_vox_files() {
+        let root = temp_root("vox-path");
+        save(&root, "a", &project("a"), b"VOX ").unwrap();
+        assert_eq!(vox_path(&root, "a").unwrap(), root.join("a").join("a.vox"));
+        assert!(vox_path(&root, "missing").is_err());
+        assert!(vox_path(&root, "../a").is_err());
         let _ = fs::remove_dir_all(&root);
     }
 

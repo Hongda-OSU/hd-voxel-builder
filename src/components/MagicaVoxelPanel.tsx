@@ -1,8 +1,9 @@
 import { useEffect } from "react";
-import { isTauri } from "@tauri-apps/api/core";
+import { invoke, isTauri } from "@tauri-apps/api/core";
 import { useExportStore, voxFileName } from "../store/exportStore";
 import type { ExportStep } from "../store/exportStore";
 import { useModelStore } from "../store/modelStore";
+import { useProjectStore } from "../store/projectStore";
 
 const stem = (file: string) => file.replace(/\.vox$/, "");
 
@@ -27,7 +28,14 @@ export function MagicaVoxelPanel() {
   const modelId = useModelStore((state) => state.modelId);
   const state = useExportStore((store) => store.state);
   const { send, restart, keep, reset } = useExportStore.getState();
+  const projectId = useProjectStore((store) => store.project?.id);
   const native = isTauri();
+  // Only a saved project has a file on disk to show.
+  const revealable = native && projectId !== undefined && projectId === modelId && state.step === "idle";
+  const reveal = () =>
+    invoke("reveal_project_file", { id: projectId }).catch((error: unknown) =>
+      useExportStore.setState({ state: { step: "error", message: String(error) } }),
+    );
   const text = native ? note(state, modelId ? voxFileName(modelId) : null) : "只能在桌面 app 里使用";
 
   // A message about the previous model would be misleading.
@@ -54,8 +62,18 @@ export function MagicaVoxelPanel() {
           在 MagicaVoxel 中打开
         </button>
       </div>
-      <p className={state.step === "error" ? "export__bar export__bar--error" : "export__bar"} role="status" title={text}>
-        {text}
+      <p
+        className={state.step === "error" ? "export__bar export__bar--error" : "export__bar"}
+        role="status"
+        title={revealable ? undefined : text}
+      >
+        {revealable ? (
+          <button type="button" className="export__reveal" title="在 Finder 中显示" onClick={() => void reveal()}>
+            {text}
+          </button>
+        ) : (
+          text
+        )}
       </p>
       {state.step === "confirm" && (
         <div className="modal">

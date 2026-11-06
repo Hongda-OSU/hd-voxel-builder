@@ -587,6 +587,29 @@ ul {
   color: var(--error);
 }
 
+.export__reveal {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.export__reveal:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.export__reveal:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* The primary button: a solid grey that matches selected rows; the accent stays for small marks. */
 .export__button {
   height: 34px;
