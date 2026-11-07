@@ -4,6 +4,12 @@
 
 A local macOS app that turns a short description into a voxel model with Claude, previews it in 3D, and sends it to MagicaVoxel.
 
+
+
+https://github.com/user-attachments/assets/678d05e2-10d8-4d1d-b1e5-27a9e8be58b0
+
+
+
 ## Features
 
 - Generate original chibi characters, objects and small scenes on a base from a description, with Opus or Sonnet; a result that fails validation is retried once.
