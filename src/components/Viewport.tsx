@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent } from "react";
-import { drawViewport, extractFaces } from "../render/viewport";
+import { buildTiming, drawViewport, extractFaces, layerCount, makeBuildFrames } from "../render/viewport";
 import type { ViewportStyle } from "../render/viewport";
-import { useModelStore } from "../store/modelStore";
+import { BUILD_MS, useModelStore } from "../store/modelStore";
 import { useProjectStore } from "../store/projectStore";
 import { PRESET_LABELS } from "./labels";
 
@@ -26,6 +26,79 @@ const EMPTY_SIZE: [number, number, number] = [24, 24, 24];
 
 const degrees = (radians: number) => Math.round((((radians * 180) / Math.PI) % 360 + 360) % 360);
 
+const PLAY = (
+  <svg viewBox="0 0 12 12" aria-hidden="true">
+    <path d="M3 2l7 4-7 4z" />
+  </svg>
+);
+const PAUSE = (
+  <svg viewBox="0 0 12 12" aria-hidden="true">
+    <path d="M3 2h2v8H3zM7 2h2v8H7z" />
+  </svg>
+);
+
+/**
+ * The toolbar while the model builds itself, layer by layer from the ground: pause, a
+ * slider to any moment, the layer count, and 完成. A finished run hands the toolbar back.
+ */
+function BuildControls({ progress, layers }: { progress: number; layers: number }) {
+  const { setBuildProgress, stopBuild } = useModelStore.getState();
+  const [playing, setPlaying] = useState(true);
+
+  // Plays from wherever the slider was left; the clock restarts when play resumes.
+  useEffect(() => {
+    if (!playing) return;
+    // Playing again from the very end starts over.
+    const left = useModelStore.getState().buildProgress ?? 0;
+    const from = left >= 1 ? 0 : left;
+    const start = performance.now() - from * BUILD_MS;
+    let frame = 0;
+    const tick = (now: number) => {
+      const t = (now - start) / BUILD_MS;
+      if (t >= 1) {
+        stopBuild();
+        return;
+      }
+      setBuildProgress(t);
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [playing, setBuildProgress, stopBuild]);
+
+  const { landed, falling } = buildTiming(layers, progress);
+  return (
+    <>
+      <button
+        type="button"
+        className="tool-button tool-button--square tool-button--on"
+        aria-label={playing ? "暂停" : "继续"}
+        onClick={() => setPlaying(!playing)}
+      >
+        {playing ? PAUSE : PLAY}
+      </button>
+      <input
+        className="preview__scrub"
+        type="range"
+        min={0}
+        max={1000}
+        value={Math.round(progress * 1000)}
+        aria-label="搭建进度"
+        onChange={(event) => {
+          setPlaying(false);
+          setBuildProgress(Number(event.target.value) / 1000);
+        }}
+      />
+      <span className="preview__step">
+        第 {Math.min(layers, landed + falling.length)} 层 / {layers}
+      </span>
+      <button type="button" className="tool-button" onClick={stopBuild}>
+        完成
+      </button>
+    </>
+  );
+}
+
 export function Viewport() {
   const spec = useModelStore((state) => state.spec);
   const grid = useModelStore((state) => state.grid);
@@ -33,14 +106,23 @@ export function Viewport() {
   const hasProjects = useProjectStore((state) => state.projects.length > 0);
   const camera = useModelStore((state) => state.camera);
   const selectedPart = useModelStore((state) => state.selectedPart);
-  const { orbit, pan, setView, resetCamera, clearSelection } = useModelStore.getState();
+  const buildProgress = useModelStore((state) => state.buildProgress);
+  const { orbit, pan, setView, resetCamera, clearSelection, startBuild } = useModelStore.getState();
 
   const areaRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drag = useRef<{ x: number; y: number; pan: boolean } | null>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
 
-  const faces = useMemo(() => (grid ? extractFaces(grid) : []), [grid]);
+  const building = buildProgress !== null;
+  const modelFaces = useMemo(() => (grid ? extractFaces(grid) : []), [grid]);
+  // Per-layer faces are cached inside, so each frame of the build only shifts falling slabs.
+  const frames = useMemo(() => (grid && building ? makeBuildFrames(grid) : null), [grid, building]);
+  const layers = useMemo(() => (grid ? layerCount(grid) : 0), [grid]);
+  const faces = useMemo(
+    () => (frames && buildProgress !== null ? frames(buildProgress) : modelFaces),
+    [frames, buildProgress, modelFaces],
+  );
 
   useEffect(() => {
     const area = areaRef.current;
@@ -133,21 +215,31 @@ export function Viewport() {
       </div>
       <div className="preview__label">{viewLabel}</div>
       <div className="preview__toolbar">
-        {PRESET_LABELS.map((preset) => (
-          <button
-            key={preset.id}
-            type="button"
-            className="tool-button tool-button--square"
-            aria-label={preset.aria}
-            onClick={() => setView(preset.id)}
-          >
-            {preset.label}
-          </button>
-        ))}
-        <span className="preview__divider" aria-hidden="true" />
-        <button type="button" className="tool-button" onClick={clearSelection} disabled={selectedPart === null}>
-          显示全部
-        </button>
+        {buildProgress !== null ? (
+          <BuildControls progress={buildProgress} layers={layers} />
+        ) : (
+          <>
+            {PRESET_LABELS.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                className="tool-button tool-button--square"
+                aria-label={preset.aria}
+                onClick={() => setView(preset.id)}
+              >
+                {preset.label}
+              </button>
+            ))}
+            <span className="preview__divider" aria-hidden="true" />
+            <button type="button" className="tool-button tool-button--icon" onClick={startBuild} disabled={!spec}>
+              {PLAY}
+              搭建
+            </button>
+            <button type="button" className="tool-button" onClick={clearSelection} disabled={selectedPart === null}>
+              显示全部
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

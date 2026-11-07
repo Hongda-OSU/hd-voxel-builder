@@ -13,6 +13,7 @@ describe("modelStore", () => {
       grid: null,
       issues: [],
       selectedPart: null,
+      buildProgress: null,
       camera: DEFAULT_CAMERA,
     }),
   );
@@ -64,5 +65,26 @@ describe("modelStore", () => {
     expect([camera.yaw, camera.pitch, camera.panX, camera.panY]).toEqual([0, PITCH_MAX, 5, -3]);
     store.getState().resetCamera();
     expect(store.getState().camera).toEqual(DEFAULT_CAMERA);
+  });
+
+  it("runs the build from 0 to 1 and stops on a new model", () => {
+    const hd = examples.find((e) => e.id === "hd")?.data;
+    store.getState().startBuild();
+    expect(store.getState().buildProgress).toBeNull();
+    store.getState().loadSpec(hd, "hd");
+    store.getState().togglePart(2);
+    store.getState().startBuild();
+    expect(store.getState()).toMatchObject({ buildProgress: 0, selectedPart: null });
+    store.getState().setBuildProgress(0.4);
+    expect(store.getState().buildProgress).toBe(0.4);
+    store.getState().setBuildProgress(3);
+    expect(store.getState().buildProgress).toBe(1);
+    store.getState().setBuildProgress(-1);
+    expect(store.getState().buildProgress).toBe(0);
+    store.getState().loadSpec(hd, "hd");
+    expect(store.getState().buildProgress).toBeNull();
+    store.getState().startBuild();
+    store.getState().stopBuild();
+    expect(store.getState().buildProgress).toBeNull();
   });
 });

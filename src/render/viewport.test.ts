@@ -1,7 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { buildModel } from "../core/buildModel";
 import type { Part, VoxelSpec } from "../core/types";
-import { DEFAULT_CAMERA, VIEW_PRESETS, extractFaces, gridSteps, makeProjector, toCamera, visibleFaces } from "./viewport";
+import {
+  DEFAULT_CAMERA,
+  DROP,
+  VIEW_PRESETS,
+  buildTiming,
+  extractFaces,
+  gridSteps,
+  layerCount,
+  makeBuildFrames,
+  makeProjector,
+  toCamera,
+  visibleFaces,
+} from "./viewport";
 import type { Camera, Vec3 } from "./viewport";
 
 function grid(parts: Part[], size: VoxelSpec["size"] = [4, 4, 4]) {
@@ -21,12 +33,11 @@ describe("extractFaces", () => {
   });
 
 
-  it("hides later parts with revealUpTo", () => {
-    const g = grid([
-      { name: "a", color: "A", cells: [[0, 0, 0]] },
-      { name: "b", color: "A", cells: [[3, 3, 3]] },
-    ]);
-    expect(extractFaces(g, { revealUpTo: 0 }).every((f) => f.part === 0)).toBe(true);
+  it("keeps only the given heights, as if the rest were missing", () => {
+    const g = grid([{ name: "a", color: "A", cells: [[1, 0, 1], [1, 1, 1]] }]);
+    expect(extractFaces(g)).toHaveLength(10);
+    expect(extractFaces(g, { heights: [0, 0] })).toHaveLength(6);
+    expect(extractFaces(g, { heights: [1, 1] }).every((f) => f.center[1] >= 1)).toBe(true);
   });
 
   it("darkens faces with occluding neighbours", () => {
@@ -127,5 +138,41 @@ describe("visibleFaces", () => {
     expect(faces.every((f) => p.facing(f.normal) > 0)).toBe(true);
     const depths = faces.map((f) => p.project(f.center)[2]);
     expect(depths).toEqual([...depths].sort((a, b) => a - b));
+  });
+});
+
+describe("build animation", () => {
+  it("lands every layer by the end and none at the start", () => {
+    expect(buildTiming(10, 0)).toEqual({ landed: 0, falling: [] });
+    expect(buildTiming(10, 1)).toEqual({ landed: 10, falling: [] });
+  });
+
+  it("drops several layers at once, lower ones closer to their place", () => {
+    const { landed, falling } = buildTiming(10, 0.5);
+    expect(falling.length).toBeGreaterThan(1);
+    expect(falling.map((f) => f.h)).toEqual(falling.map((_, i) => landed + i));
+    for (let i = 1; i < falling.length; i++) expect(falling[i]!.lift).toBeGreaterThan(falling[i - 1]!.lift);
+    expect(falling.every((f) => f.lift > 0 && f.lift <= DROP && f.alpha > 0 && f.alpha <= 1)).toBe(true);
+  });
+
+  it("only moves forward", () => {
+    let before = buildTiming(12, 0);
+    for (let t = 0.05; t <= 1; t += 0.05) {
+      const now = buildTiming(12, t);
+      expect(now.landed).toBeGreaterThanOrEqual(before.landed);
+      before = now;
+    }
+  });
+
+  it("ends on the model's own faces and starts empty", () => {
+    const g = grid([{ name: "a", color: "A", boxes: [[0, 2, 0, 3, 0, 2]] }]);
+    expect(layerCount(g)).toBe(4);
+    const frames = makeBuildFrames(g);
+    expect(frames(0)).toEqual([]);
+    expect(frames(1)).toEqual(extractFaces(g));
+    // A falling layer is a slab of its own: its top, bottom and sides all show, lifted.
+    const middle = frames(0.4).filter((f) => f.alpha !== undefined);
+    expect(middle.length).toBeGreaterThan(0);
+    expect(middle.some((f) => f.normal[1] === -1)).toBe(true);
   });
 });

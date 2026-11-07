@@ -13,11 +13,13 @@ export interface Face {
   part: number;
   /** Lighting times ambient occlusion, applied to the palette color. */
   brightness: number;
+  /** Below 1 while the face is still falling into place in the build animation. */
+  alpha?: number;
 }
 
 export interface FaceFilter {
-  /** Hide parts after this index (build animation). */
-  revealUpTo: number | null;
+  /** Keeps only voxels from h0 to h1, inclusive, as if the rest were missing. */
+  heights?: [number, number];
 }
 
 type Axis = 0 | 1 | 2;
@@ -32,12 +34,12 @@ const LIGHT: Vec3 = (() => {
 })();
 
 /** Faces with no visible neighbour; recompute only when the model or filter changes. */
-export function extractFaces(grid: VoxelGrid, filter: FaceFilter = { revealUpTo: null }): Face[] {
+export function extractFaces(grid: VoxelGrid, filter: FaceFilter = {}): Face[] {
   const [w, depth] = grid.size;
+  const [h0, h1] = filter.heights ?? [0, Infinity];
   const shown = (x: number, h: number, d: number) => {
-    if (!inBounds(grid.size, x, h, d)) return false;
-    const voxel = grid.cells[cellIndex(grid.size, x, h, d)];
-    return voxel !== undefined && (filter.revealUpTo === null || voxel.part <= filter.revealUpTo);
+    if (h < h0 || h > h1 || !inBounds(grid.size, x, h, d)) return false;
+    return grid.cells[cellIndex(grid.size, x, h, d)] !== undefined;
   };
 
   const faces: Face[] = [];
@@ -83,6 +85,81 @@ export function extractFaces(grid: VoxelGrid, filter: FaceFilter = { revealUpTo:
     }
   });
   return faces;
+}
+
+/** Filled layers from the ground up: the highest filled h plus one, or 0 when empty. */
+export function layerCount(grid: VoxelGrid): number {
+  const [w, depth] = grid.size;
+  let top = -1;
+  grid.cells.forEach((voxel, i) => {
+    if (voxel) top = Math.max(top, Math.floor(i / (w * depth)));
+  });
+  return top + 1;
+}
+
+/** How many layers are in the air at once while building. */
+const FALL_LAYERS = 2.7;
+/** How high, in voxels, a layer starts its fall. */
+export const DROP = 6;
+
+/**
+ * Where the build animation stands at progress t (0–1): how many layers have landed,
+ * and the layers still falling, with their height above their place and opacity. Each
+ * layer starts a little after the one below and eases into place, so several are in
+ * the air at once; the top one lands exactly at t = 1.
+ */
+export function buildTiming(layers: number, t: number): { landed: number; falling: { h: number; lift: number; alpha: number }[] } {
+  // Rounding would leave the top layer a hair short of landing at the very end.
+  if (t >= 1) return { landed: layers, falling: [] };
+  const gap = 1 / Math.max(1, layers - 1 + FALL_LAYERS);
+  const falling: { h: number; lift: number; alpha: number }[] = [];
+  let landed = 0;
+  for (let h = 0; h < layers; h++) {
+    const k = Math.min(1, Math.max(0, (t - h * gap) / (FALL_LAYERS * gap)));
+    if (k >= 1) {
+      if (landed === h) landed = h + 1;
+      continue;
+    }
+    if (k <= 0) break;
+    const eased = 1 - (1 - k) ** 3;
+    falling.push({ h, lift: (1 - eased) * DROP, alpha: Math.min(1, 0.25 + eased) });
+  }
+  return { landed, falling };
+}
+
+/**
+ * Faces for any moment of the build animation. Landed layers are drawn as their own
+ * solid, and each falling layer as a slab with its sides and bottom showing; both are
+ * computed once per layer and cached, so a frame only shifts the falling slabs.
+ */
+export function makeBuildFrames(grid: VoxelGrid): (t: number) => Face[] {
+  const layers = layerCount(grid);
+  const landedCache = new Map<number, Face[]>();
+  const slabCache = new Map<number, Face[]>();
+  const landedFaces = (n: number) => {
+    if (!landedCache.has(n)) landedCache.set(n, n === 0 ? [] : extractFaces(grid, { heights: [0, n - 1] }));
+    return landedCache.get(n) ?? [];
+  };
+  const slab = (h: number) => {
+    if (!slabCache.has(h)) slabCache.set(h, extractFaces(grid, { heights: [h, h] }));
+    return slabCache.get(h) ?? [];
+  };
+  const lift = (p: Vec3, by: number): Vec3 => [p[0], p[1] + by, p[2]];
+  return (t) => {
+    const { landed, falling } = buildTiming(layers, t);
+    const faces = [...landedFaces(landed)];
+    for (const { h, lift: by, alpha } of falling) {
+      for (const face of slab(h)) {
+        faces.push({
+          ...face,
+          corners: [lift(face.corners[0], by), lift(face.corners[1], by), lift(face.corners[2], by), lift(face.corners[3], by)],
+          center: lift(face.center, by),
+          alpha,
+        });
+      }
+    }
+    return faces;
+  };
 }
 
 /** Orthographic orbit camera around the canvas centre. Angles are radians. */
@@ -231,7 +308,7 @@ export function drawViewport(
   ctx.lineJoin = "round";
   ctx.lineWidth = 1;
   for (const face of visibleFaces(faces, projector)) {
-    ctx.globalAlpha = options.highlight === null || options.highlight === face.part ? 1 : 0.12;
+    ctx.globalAlpha = (options.highlight === null || options.highlight === face.part ? 1 : 0.12) * (face.alpha ?? 1);
     polygon(ctx, face.corners.map((c) => projector.project(c)));
     const fill = shade(palette[face.color] ?? "#ff00ff", face.brightness);
     ctx.fillStyle = fill;

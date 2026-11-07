@@ -1038,6 +1038,8 @@ ul {
   background: var(--chrome);
   border: 1px solid var(--line-strong);
   border-radius: 10px;
+  /* Centred with a transform, so it shrinks to fit; labels must not wrap. */
+  white-space: nowrap;
 }
 
 .preview__divider {
@@ -1066,6 +1068,45 @@ ul {
 .tool-button:disabled {
   color: var(--muted);
   cursor: default;
+}
+
+.tool-button--icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tool-button--on {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.tool-button svg {
+  display: block;
+  width: 11px;
+  height: 11px;
+  fill: currentColor;
+}
+
+/* Build animation: a slider over the steps and the current step's part. */
+.preview__scrub {
+  width: 140px;
+  align-self: center;
+  accent-color: var(--accent);
+}
+
+.preview__step {
+  min-width: 120px;
+  max-width: 200px;
+  align-self: center;
+  overflow: hidden;
+  padding: 0 4px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Inspector */
