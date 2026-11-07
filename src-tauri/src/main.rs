@@ -181,25 +181,61 @@ fn restart_magicavoxel(file: String) -> Result<(), String> {
     magicavoxel::restart(&find_app()?, stem)
 }
 
-/// Adds 设置… (⌘,) to the default app menu, after About, where Mac apps keep it.
-fn add_settings_item(app: &tauri::App) -> tauri::Result<()> {
+/// The window size for screen recordings, so every take frames the app the same way.
+const RECORDING_SIZE: (f64, f64) = (1280.0, 800.0);
+
+/// The default menu plus 设置… (⌘,) after About, where Mac apps keep it, and a
+/// recording size item at the end of the Window menu.
+fn build_menu(app: &tauri::App) -> tauri::Result<()> {
     let menu = Menu::default(app.handle())?;
-    if let Some(MenuItemKind::Submenu(app_menu)) = menu.items()?.into_iter().next() {
+    let submenus: Vec<_> = menu
+        .items()?
+        .into_iter()
+        .filter_map(|item| match item {
+            MenuItemKind::Submenu(submenu) => Some(submenu),
+            _ => None,
+        })
+        .collect();
+    if let Some(app_menu) = submenus.first() {
         let settings = MenuItem::with_id(app, "settings", "设置…", true, Some("CmdOrCtrl+,"))?;
         app_menu.insert(&settings, 2)?;
         app_menu.insert(&PredefinedMenuItem::separator(app)?, 3)?;
+    }
+    if let Some(window_menu) = submenus
+        .iter()
+        .find(|submenu| submenu.text().is_ok_and(|text| text == "Window"))
+    {
+        let label = format!("录屏尺寸（{} × {}）", RECORDING_SIZE.0, RECORDING_SIZE.1);
+        window_menu.append(&PredefinedMenuItem::separator(app)?)?;
+        window_menu.append(&MenuItem::with_id(
+            app,
+            "recording-size",
+            label,
+            true,
+            None::<&str>,
+        )?)?;
     }
     app.set_menu(menu)?;
     Ok(())
 }
 
+/// Resizes the main window to RECORDING_SIZE and centres it.
+fn use_recording_size(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.set_size(tauri::LogicalSize::new(RECORDING_SIZE.0, RECORDING_SIZE.1));
+        let _ = window.center();
+    }
+}
+
 fn main() {
     tauri::Builder::default()
-        .setup(|app| Ok(add_settings_item(app)?))
-        .on_menu_event(|app, event| {
-            if event.id().as_ref() == "settings" {
+        .setup(|app| Ok(build_menu(app)?))
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            "settings" => {
                 let _ = app.emit("open-settings", ());
             }
+            "recording-size" => use_recording_size(app),
+            _ => {}
         })
         .invoke_handler(tauri::generate_handler![
             claude_status,

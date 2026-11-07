@@ -49,7 +49,7 @@ pnpm build  # Build src-tauri/target/release/bundle/macos/HD Voxel Builder.app
 
 Pick a style, write a description, and press Return to generate (Shift+Return adds a line). To start from pictures, drop up to three images on the left column or paste them into the box, then click 看图写描述 for a draft to edit; with 附图 on, the images go with the request too. Every project is saved with all its versions to `~/HDVoxel/projects/<id>/`. Click a project in the list to view it; its 修改 button (or a double-click) opens its versions, and the same box then takes edit requests such as 「车斗再长两格」. Clicking an older version returns to it. At launch the project you last viewed is shown again, or the newest one; the first launch adds a basketball and a car to start from.
 
-Click the file name under the export button to show the `.vox` in Finder, or the trash button on the chosen project to move it to the Trash. **在 MagicaVoxel 中打开** writes the model into MagicaVoxel's model folder (change it with ⌘,) and restarts MagicaVoxel; then click the file in its Project list.
+Click the file name under the export button to show the `.vox` in Finder, or the trash button on the chosen project to move it to the Trash. **在 MagicaVoxel 中打开** writes the model into MagicaVoxel's model folder (change it with ⌘,) and restarts MagicaVoxel; then click the file in its Project list. For screen recordings, **Window › 录屏尺寸** sets the window to 1280 × 800.
 
 To try prompts without the app, `pnpm gen` saves a spec to `src/prompts/examples/<slug>-<model>.local.json`, which git ignores:
 
