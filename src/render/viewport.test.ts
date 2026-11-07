@@ -7,6 +7,7 @@ import {
   VIEW_PRESETS,
   buildTiming,
   extractFaces,
+  filledBounds,
   gridSteps,
   layerCount,
   makeBuildFrames,
@@ -174,5 +175,13 @@ describe("build animation", () => {
     const middle = frames(0.4).filter((f) => f.alpha !== undefined);
     expect(middle.length).toBeGreaterThan(0);
     expect(middle.some((f) => f.normal[1] === -1)).toBe(true);
+  });
+});
+
+describe("filledBounds", () => {
+  it("frames the filled voxels, not the canvas", () => {
+    const g = grid([{ name: "a", color: "A", boxes: [[1, 2, 0, 0, 3, 3]] }], [8, 8, 8]);
+    expect(filledBounds(g)).toEqual({ min: [1, 0, 3], size: [2, 1, 1] });
+    expect(filledBounds(grid([], [4, 4, 4]))).toBeNull();
   });
 });

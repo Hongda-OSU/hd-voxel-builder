@@ -549,19 +549,11 @@ ul {
 }
 
 .recent__thumb {
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   flex: none;
-  display: grid;
-  place-items: center;
   border-radius: 6px;
   background: var(--stage);
-}
-
-.recent__thumb span {
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
 }
 
 .recent__text {

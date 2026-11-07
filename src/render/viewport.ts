@@ -305,10 +305,21 @@ export function drawViewport(
 
   drawFloor(ctx, size, projector, width, height, style);
 
+  drawFaces(ctx, faces, projector, palette, options.highlight);
+  drawGizmo(ctx, options.camera, width - 42, 42, style);
+}
+
+function drawFaces(
+  ctx: CanvasRenderingContext2D,
+  faces: Face[],
+  projector: Projector,
+  palette: Record<string, string>,
+  highlight: number | null,
+): void {
   ctx.lineJoin = "round";
   ctx.lineWidth = 1;
   for (const face of visibleFaces(faces, projector)) {
-    ctx.globalAlpha = (options.highlight === null || options.highlight === face.part ? 1 : 0.12) * (face.alpha ?? 1);
+    ctx.globalAlpha = (highlight === null || highlight === face.part ? 1 : 0.12) * (face.alpha ?? 1);
     polygon(ctx, face.corners.map((c) => projector.project(c)));
     const fill = shade(palette[face.color] ?? "#ff00ff", face.brightness);
     ctx.fillStyle = fill;
@@ -318,8 +329,52 @@ export function drawViewport(
     ctx.stroke();
   }
   ctx.globalAlpha = 1;
+}
 
-  drawGizmo(ctx, options.camera, width - 42, 42, style);
+/** The smallest box around the filled voxels, as [min, size]; null for an empty grid. */
+export function filledBounds(grid: VoxelGrid): { min: Vec3; size: Vec3 } | null {
+  const [w, depth] = grid.size;
+  const min: Vec3 = [Infinity, Infinity, Infinity];
+  const max: Vec3 = [-Infinity, -Infinity, -Infinity];
+  grid.cells.forEach((voxel, i) => {
+    if (!voxel) return;
+    const p: Vec3 = [i % w, Math.floor(i / (w * depth)), Math.floor(i / w) % depth];
+    for (const k of [0, 1, 2] as const) {
+      min[k] = Math.min(min[k], p[k]);
+      max[k] = Math.max(max[k], p[k] + 1);
+    }
+  });
+  if (min[0] === Infinity) return null;
+  return { min, size: [max[0] - min[0], max[1] - min[1], max[2] - min[2]] };
+}
+
+/** Thumbnail framing is tighter than the viewport's, which leaves room to orbit. */
+const THUMBNAIL_ZOOM = 1.3;
+
+/**
+ * A list thumbnail: the model alone from the default view, framed on its filled voxels
+ * rather than its canvas, with no floor or axes. Draws in CSS pixels.
+ */
+export function drawThumbnail(
+  ctx: CanvasRenderingContext2D,
+  grid: VoxelGrid,
+  palette: Record<string, string>,
+  width: number,
+  height: number,
+): void {
+  ctx.clearRect(0, 0, width, height);
+  const bounds = filledBounds(grid);
+  if (!bounds) return;
+  const shift = (p: Vec3): Vec3 => [p[0] - bounds.min[0], p[1] - bounds.min[1], p[2] - bounds.min[2]];
+  const faces = extractFaces(grid).map((face) => ({
+    ...face,
+    corners: face.corners.map(shift) as Face["corners"],
+    center: shift(face.center),
+  }));
+  // Projector sizes are [w, d, h]; bounds are [x, h, d].
+  const size: VoxelGrid["size"] = [bounds.size[0], bounds.size[2], bounds.size[1]];
+  const projector = makeProjector(size, { ...DEFAULT_CAMERA, zoom: THUMBNAIL_ZOOM }, width, height);
+  drawFaces(ctx, faces, projector, palette, null);
 }
 
 /**

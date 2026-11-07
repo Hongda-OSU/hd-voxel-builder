@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { DragEvent as ReactDragEvent } from "react";
 import { isTauri } from "@tauri-apps/api/core";
-import { mainColor } from "../core/project";
+import { buildModel } from "../core/buildModel";
+import { validateSpec } from "../core/spec";
+import { drawThumbnail } from "../render/viewport";
 import { MAX_REFS } from "../core/refs";
 import { isBusy, useGenerateStore } from "../store/generateStore";
 import { useProjectStore } from "../store/projectStore";
@@ -9,6 +11,30 @@ import type { ProjectSummary } from "../store/projectStore";
 import { GeneratePanel } from "./GeneratePanel";
 import { STYLE_LABELS, shortTime } from "./labels";
 import { ProjectView } from "./ProjectView";
+
+const THUMB_SIZE = 36;
+
+/** The model itself, drawn small from the default view; empty for a spec that will not build. */
+function ProjectThumb({ spec }: { spec: unknown }) {
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const model = useMemo(() => {
+    const valid = validateSpec(spec).spec;
+    return valid ? { grid: buildModel(valid), palette: valid.palette } : null;
+  }, [spec]);
+
+  useEffect(() => {
+    const ctx = canvas.current?.getContext("2d");
+    if (!canvas.current || !ctx) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.current.width = THUMB_SIZE * dpr;
+    canvas.current.height = THUMB_SIZE * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (model) drawThumbnail(ctx, model.grid, model.palette, THUMB_SIZE, THUMB_SIZE);
+    else ctx.clearRect(0, 0, THUMB_SIZE, THUMB_SIZE);
+  }, [model]);
+
+  return <canvas ref={canvas} className="recent__thumb" aria-hidden="true" />;
+}
 
 /** Saved projects, newest first; hidden until there is one. */
 function RecentList() {
@@ -28,7 +54,6 @@ function RecentList() {
     window.addEventListener("focus", refresh);
     return () => window.removeEventListener("focus", refresh);
   }, []);
-  const colors = useMemo(() => new Map(projects.map((p) => [p.id, mainColor(p.spec)])), [projects]);
   // Escape keeps the project, like the cancel button.
   useEffect(() => {
     if (!pending) return;
@@ -65,9 +90,7 @@ function RecentList() {
                 if (!busy) void edit(project.id);
               }}
             >
-              <span className="recent__thumb">
-                <span style={{ background: colors.get(project.id) ?? "transparent" }} />
-              </span>
+              <ProjectThumb spec={project.spec} />
               <span className="recent__text">
                 <span className="recent__name">{project.name}</span>
                 <span className="recent__meta">
