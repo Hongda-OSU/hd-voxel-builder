@@ -81,7 +81,10 @@ if (!values.describe) args.push("--json-schema", await read("tool.json"));
 
 // Pretty JSON with number arrays such as boxes kept on one line.
 const format = (spec) =>
-  JSON.stringify(spec, null, 2).replace(/\[\s+(-?[\d.]+(?:,\s+-?[\d.]+)*)\s+\]/g, (_, inner) => `[${inner.split(/,\s+/).join(", ")}]`);
+  JSON.stringify(spec, null, 2).replace(
+    /\[\s+(-?[\d.]+(?:,\s+-?[\d.]+)*)\s+\]/g,
+    (_, inner) => `[${inner.split(/,\s+/).join(", ")}]`,
+  );
 
 function parseJson(text) {
   try {

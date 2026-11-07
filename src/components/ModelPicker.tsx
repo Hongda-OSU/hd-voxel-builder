@@ -32,7 +32,12 @@ export function ModelPicker() {
   }, [shown]);
 
   const show = () => {
-    setActive(Math.max(0, MODELS.findIndex(({ id }) => id === model)));
+    setActive(
+      Math.max(
+        0,
+        MODELS.findIndex(({ id }) => id === model),
+      ),
+    );
     setOpen(true);
   };
   const hide = () => {

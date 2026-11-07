@@ -24,7 +24,14 @@ export interface FaceFilter {
 
 type Axis = 0 | 1 | 2;
 
-const DIRECTIONS: Vec3[] = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
+const DIRECTIONS: Vec3[] = [
+  [1, 0, 0],
+  [-1, 0, 0],
+  [0, 1, 0],
+  [0, -1, 0],
+  [0, 0, 1],
+  [0, 0, -1],
+];
 
 // Fixed in grid space, so shading turns with the model: above, front-right.
 const LIGHT: Vec3 = (() => {
@@ -108,7 +115,10 @@ export const DROP = 6;
  * layer starts a little after the one below and eases into place, so several are in
  * the air at once; the top one lands exactly at t = 1.
  */
-export function buildTiming(layers: number, t: number): { landed: number; falling: { h: number; lift: number; alpha: number }[] } {
+export function buildTiming(
+  layers: number,
+  t: number,
+): { landed: number; falling: { h: number; lift: number; alpha: number }[] } {
   // Rounding would leave the top layer a hair short of landing at the very end.
   if (t >= 1) return { landed: layers, falling: [] };
   const gap = 1 / Math.max(1, layers - 1 + FALL_LAYERS);
@@ -152,7 +162,12 @@ export function makeBuildFrames(grid: VoxelGrid): (t: number) => Face[] {
       for (const face of slab(h)) {
         faces.push({
           ...face,
-          corners: [lift(face.corners[0], by), lift(face.corners[1], by), lift(face.corners[2], by), lift(face.corners[3], by)],
+          corners: [
+            lift(face.corners[0], by),
+            lift(face.corners[1], by),
+            lift(face.corners[2], by),
+            lift(face.corners[3], by),
+          ],
           center: lift(face.center, by),
           alpha,
         });
@@ -212,13 +227,17 @@ const EDGE_ON = 0.03;
 export function toCamera(camera: Pick<Camera, "yaw" | "pitch">, [x, h, d]: Vec3): Vec3 {
   const x1 = x * Math.cos(camera.yaw) - d * Math.sin(camera.yaw);
   const z1 = x * Math.sin(camera.yaw) + d * Math.cos(camera.yaw);
-  return [x1, h * Math.cos(camera.pitch) - z1 * Math.sin(camera.pitch), h * Math.sin(camera.pitch) + z1 * Math.cos(camera.pitch)];
+  return [
+    x1,
+    h * Math.cos(camera.pitch) - z1 * Math.sin(camera.pitch),
+    h * Math.sin(camera.pitch) + z1 * Math.cos(camera.pitch),
+  ];
 }
 
 export function makeProjector(size: VoxelGrid["size"], camera: Camera, width: number, height: number): Projector {
   const [w, depth, tall] = size;
   // Fits the canvas box's bounding sphere at zoom 1.
-  const scale = ((Math.min(width, height) / Math.hypot(w, depth, tall)) * 0.95) * camera.zoom;
+  const scale = (Math.min(width, height) / Math.hypot(w, depth, tall)) * 0.95 * camera.zoom;
   const ox = width / 2 + camera.panX;
   const oy = height / 2 + camera.panY;
   return {
@@ -320,7 +339,10 @@ function drawFaces(
   ctx.lineWidth = 1;
   for (const face of visibleFaces(faces, projector)) {
     ctx.globalAlpha = (highlight === null || highlight === face.part ? 1 : 0.12) * (face.alpha ?? 1);
-    polygon(ctx, face.corners.map((c) => projector.project(c)));
+    polygon(
+      ctx,
+      face.corners.map((c) => projector.project(c)),
+    );
     const fill = shade(palette[face.color] ?? "#ff00ff", face.brightness);
     ctx.fillStyle = fill;
     ctx.fill();
@@ -393,7 +415,12 @@ function drawFloor(
   const [w, depth] = size;
   const cx = w / 2;
   const cz = depth / 2;
-  const corners = [projector.toFloor(0, 0), projector.toFloor(width, 0), projector.toFloor(0, height), projector.toFloor(width, height)];
+  const corners = [
+    projector.toFloor(0, 0),
+    projector.toFloor(width, 0),
+    projector.toFloor(0, height),
+    projector.toFloor(width, height),
+  ];
   ctx.lineWidth = 1;
   if (corners.some((c) => c === null)) {
     const [, y] = projector.project([cx, 0, cz]);
@@ -404,10 +431,7 @@ function drawFloor(
     ctx.stroke();
     return;
   }
-  const reach = Math.min(
-    MAX_REACH,
-    Math.max(...corners.map((c) => (c ? Math.hypot(c[0] - cx, c[1] - cz) : 0))),
-  );
+  const reach = Math.min(MAX_REACH, Math.max(...corners.map((c) => (c ? Math.hypot(c[0] - cx, c[1] - cz) : 0))));
   const { fine, major } = gridSteps(projector.scale, reach);
   strokeGrid(ctx, projector, [cx, cz], fine, Math.min(reach, fine * FINE_REACH), style.gridFine);
   strokeGrid(ctx, projector, [cx, cz], major, reach, style.gridMajor);
@@ -429,7 +453,12 @@ function drawFloor(
 
   ctx.strokeStyle = style.gridEdge;
   ctx.lineWidth = 1;
-  polygon(ctx, [projector.project([0, 0, 0]), projector.project([w, 0, 0]), projector.project([w, 0, depth]), projector.project([0, 0, depth])]);
+  polygon(ctx, [
+    projector.project([0, 0, 0]),
+    projector.project([w, 0, 0]),
+    projector.project([w, 0, depth]),
+    projector.project([0, 0, depth]),
+  ]);
   ctx.stroke();
 }
 

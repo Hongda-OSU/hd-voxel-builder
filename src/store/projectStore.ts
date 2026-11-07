@@ -157,9 +157,12 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         // A project removed outside the app (say, in Finder) is no longer open; a read
         // that began before the current project was opened says nothing about it.
         const open = get().project;
-        const gone =
-          before === switches && open !== null && !projects.some((summary) => summary.id === open.id);
-        set({ projects: [...projects].sort(newestFirst), error: null, ...(gone ? { project: null, editing: false, refs: [] } : {}) });
+        const gone = before === switches && open !== null && !projects.some((summary) => summary.id === open.id);
+        set({
+          projects: [...projects].sort(newestFirst),
+          error: null,
+          ...(gone ? { project: null, editing: false, refs: [] } : {}),
+        });
       } catch (error) {
         set({ error: String(error) });
       }
@@ -184,7 +187,10 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       if (get().project?.id === id) set({ editing: true });
     },
     createFromGeneration: async (input, startedAt, images = []) => {
-      const id = projectId(startedAt, get().projects.map((summary) => summary.id));
+      const id = projectId(
+        startedAt,
+        get().projects.map((summary) => summary.id),
+      );
       const refs = images.map((image, index) => ({ ...image, name: refFileName(index, image.mediaType) }));
       const project = createProject(id, "generate", input, new Date(), { refs: refs.map((ref) => ref.name) });
       // Shown first: a failed save must not hide what was just generated.
@@ -200,7 +206,9 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         const id = projectId(new Date(now), ids);
         ids.push(id);
         // A second apart keeps the newest-first list in starter order.
-        starters.push(createProject(id, "example", { spec, prompt: "" }, new Date(now - index * 1000), { from: example.id }));
+        starters.push(
+          createProject(id, "example", { spec, prompt: "" }, new Date(now - index * 1000), { from: example.id }),
+        );
       });
       try {
         for (const project of starters) await save(project);

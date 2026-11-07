@@ -33,7 +33,14 @@ describe("validateSpec", () => {
   it("rejects malformed shapes with paths", () => {
     expect(validateSpec("nope")).toEqual({
       spec: null,
-      issues: [{ level: "error", kind: "schema", message: "schema: spec must be an object", text: "格式不对：spec 要是一个对象" }],
+      issues: [
+        {
+          level: "error",
+          kind: "schema",
+          message: "schema: spec must be an object",
+          text: "格式不对：spec 要是一个对象",
+        },
+      ],
     });
     const parts = [{ name: "a", color: "A", boxes: [[0, 1, 2, 3, 4]], chamfer: "round", mirrorX: "yes" }];
     expect(messages(base({ size: [8, 0, 8], palette: { A: "red" }, parts }))).toEqual([
@@ -70,7 +77,9 @@ describe("validateSpec", () => {
   });
 
   it("reports unknown colors, duplicate names and too many colors", () => {
-    const palette = Object.fromEntries(Array.from({ length: 25 }, (_, i) => [`A${String.fromCharCode(97 + i)}`, "#000000"]));
+    const palette = Object.fromEntries(
+      Array.from({ length: 25 }, (_, i) => [`A${String.fromCharCode(97 + i)}`, "#000000"]),
+    );
     const parts = [
       { name: "头发", color: "Aa" },
       { name: "头发", color: "Aa" },
@@ -103,18 +112,24 @@ describe("checkGrid", () => {
   });
 
   it("flags parts not connected to the ground", () => {
-    expect(check([
-      { name: "身体", color: "A", boxes: [[0, 0, 0, 3, 0, 0]] },
-      { name: "帽子", color: "A", cells: [[0, 5, 0]] },
-    ])).toEqual(['floating: part "帽子" is not connected to the ground']);
+    expect(
+      check([
+        { name: "身体", color: "A", boxes: [[0, 0, 0, 3, 0, 0]] },
+        { name: "帽子", color: "A", cells: [[0, 5, 0]] },
+      ]),
+    ).toEqual(['floating: part "帽子" is not connected to the ground']);
   });
 
   it("explains grid problems in Chinese", () => {
-    const { spec } = validateSpec(base({ parts: [
-      { name: "身体", color: "A", boxes: [[0, 0, 0, 3, 0, 0]] },
-      { name: "帽子", color: "A", cells: [[0, 5, 0]] },
-      { name: "腮红", color: "A", paint: true, cells: [[5, 5, 5]] },
-    ] }));
+    const { spec } = validateSpec(
+      base({
+        parts: [
+          { name: "身体", color: "A", boxes: [[0, 0, 0, 3, 0, 0]] },
+          { name: "帽子", color: "A", cells: [[0, 5, 0]] },
+          { name: "腮红", color: "A", paint: true, cells: [[5, 5, 5]] },
+        ],
+      }),
+    );
     if (!spec) throw new Error("invalid test spec");
     expect(checkGrid(spec, buildModel(spec)).map((i) => i.text)).toEqual([
       "「腮红」只涂色，但没有涂到任何方块",
@@ -123,17 +138,21 @@ describe("checkGrid", () => {
   });
 
   it("accepts parts connected through other parts", () => {
-    expect(check([
-      { name: "身体", color: "A", boxes: [[0, 0, 0, 3, 0, 0]] },
-      { name: "手臂", color: "A", boxes: [[1, 3, 3, 3, 0, 0]] },
-      { name: "球", color: "A", cells: [[3, 4, 0]] },
-    ])).toEqual([]);
+    expect(
+      check([
+        { name: "身体", color: "A", boxes: [[0, 0, 0, 3, 0, 0]] },
+        { name: "手臂", color: "A", boxes: [[1, 3, 3, 3, 0, 0]] },
+        { name: "球", color: "A", cells: [[3, 4, 0]] },
+      ]),
+    ).toEqual([]);
   });
 
   it("warns when paint hits nothing", () => {
-    expect(check([
-      { name: "身体", color: "A", cells: [[0, 0, 0]] },
-      { name: "腮红", color: "A", cells: [[5, 0, 5]], paint: true },
-    ])).toEqual(['paint: part "腮红" paints 0 voxels']);
+    expect(
+      check([
+        { name: "身体", color: "A", cells: [[0, 0, 0]] },
+        { name: "腮红", color: "A", cells: [[5, 0, 5]], paint: true },
+      ]),
+    ).toEqual(['paint: part "腮红" paints 0 voxels']);
   });
 });

@@ -24,7 +24,7 @@ function readStyle(): ViewportStyle {
 /** The floor drawn when there is no model, so the empty canvas still looks like a viewport. */
 const EMPTY_SIZE: [number, number, number] = [24, 24, 24];
 
-const degrees = (radians: number) => Math.round((((radians * 180) / Math.PI) % 360 + 360) % 360);
+const degrees = (radians: number) => Math.round(((((radians * 180) / Math.PI) % 360) + 360) % 360);
 
 const PLAY = (
   <svg viewBox="0 0 12 12" aria-hidden="true">

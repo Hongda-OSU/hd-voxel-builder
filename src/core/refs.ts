@@ -42,7 +42,9 @@ export function bytesToBase64(bytes: ArrayLike<number>): string {
   let binary = "";
   // Chunks keep String.fromCharCode under the argument limit.
   for (let i = 0; i < bytes.length; i += 0x8000) {
-    binary += String.fromCharCode(...Array.from({ length: Math.min(0x8000, bytes.length - i) }, (_, j) => bytes[i + j] as number));
+    binary += String.fromCharCode(
+      ...Array.from({ length: Math.min(0x8000, bytes.length - i) }, (_, j) => bytes[i + j] as number),
+    );
   }
   return btoa(binary);
 }

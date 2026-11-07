@@ -46,8 +46,6 @@ describe("modelStore", () => {
     expect(store.getState().selectedPart).toBeNull();
   });
 
-
-
   it("orbits freely in yaw and clamps pitch", () => {
     store.getState().orbit(10, 10);
     expect(store.getState().camera.yaw).toBeCloseTo(DEFAULT_CAMERA.yaw + 10);

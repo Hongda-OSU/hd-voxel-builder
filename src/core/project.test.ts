@@ -78,7 +78,11 @@ describe("project versions", () => {
     // Back to v1, then edit again: v3 starts from v1 and v2 stays.
     const back = setCurrent(edited, 1, at(41));
     const again = addEdit(back, { spec: basketball, prompt: "不变" }, at(42));
-    expect(again.versions.map((v) => [v.n, v.base])).toEqual([[1, undefined], [2, 1], [3, 1]]);
+    expect(again.versions.map((v) => [v.n, v.base])).toEqual([
+      [1, undefined],
+      [2, 1],
+      [3, 1],
+    ]);
     expect(currentVersion(again)?.n).toBe(3);
     expect(again.updatedAt).toBe(localIso(at(42)));
   });
@@ -88,16 +92,24 @@ describe("project versions", () => {
   });
 
   it("records the example a project was copied from", () => {
-    const copy = createProject("20261105-1500", "example", { spec: basketball, prompt: "" }, at(0), { from: "basketball" });
+    const copy = createProject("20261105-1500", "example", { spec: basketball, prompt: "" }, at(0), {
+      from: "basketball",
+    });
     expect(copy.from).toBe("basketball");
     expect(copy.versions[0]).not.toHaveProperty("model");
     expect(copy).not.toHaveProperty("refs");
   });
 
   it("records reference images and which versions sent them", () => {
-    const withRefs = createProject("20261105-1600", "generate", { spec: basketball, prompt: "邮筒", attached: true }, at(0), {
-      refs: ["1.jpg", "2.png"],
-    });
+    const withRefs = createProject(
+      "20261105-1600",
+      "generate",
+      { spec: basketball, prompt: "邮筒", attached: true },
+      at(0),
+      {
+        refs: ["1.jpg", "2.png"],
+      },
+    );
     expect(withRefs.refs).toEqual(["1.jpg", "2.png"]);
     expect(withRefs.versions[0]?.attached).toBe(true);
     const edited = addEdit(withRefs, { spec: basketball, prompt: "再高一点" }, at(1));
@@ -118,7 +130,9 @@ describe("parseProject", () => {
   it("accepts reference images, and older files without them", () => {
     const versions = (saved as { versions: object[] }).versions.map((v) => ({ ...v, attached: true }));
     expect(parseProject({ ...(saved as object), refs: ["1.png"], versions })?.refs).toEqual(["1.png"]);
-    expect(parseProject({ ...(saved as object), versions: versions.map((v) => ({ ...v, attached: "yes" })) })).toBeNull();
+    expect(
+      parseProject({ ...(saved as object), versions: versions.map((v) => ({ ...v, attached: "yes" })) }),
+    ).toBeNull();
   });
 
   it("rejects broken files", () => {
@@ -130,6 +144,8 @@ describe("parseProject", () => {
     expect(broken({ versions: [] })).toBeNull();
     expect(broken({ refs: "1.png" })).toBeNull();
     expect(broken({ refs: [1] })).toBeNull();
-    expect(broken({ versions: [{ n: 1, kind: "generate", prompt: "", retried: false, createdAt: "", spec: {} }] })).toBeNull();
+    expect(
+      broken({ versions: [{ n: 1, kind: "generate", prompt: "", retried: false, createdAt: "", spec: {} }] }),
+    ).toBeNull();
   });
 });

@@ -163,9 +163,7 @@ export function GeneratePanel() {
   const canAsk = native && claude === "ready";
   const ready = canAsk;
   const canGenerate = ready && !generating && description.trim() !== "";
-  const blocked = !native
-    ? "只能在桌面 app 里生成"
-    : CLAUDE_NOTES[claude];
+  const blocked = !native ? "只能在桌面 app 里生成" : CLAUDE_NOTES[claude];
   // A failed save or open outranks the generation note: the model on screen is not on disk.
   const status = blocked ?? projectError ?? phaseNote(phase, now, shownId);
   const isError = Boolean(blocked) || Boolean(projectError) || phase.step === "error";
@@ -244,7 +242,13 @@ export function GeneratePanel() {
           )}
           {native && <ModelPicker />}
           {generating ? (
-            <button type="button" className="composer__send" aria-label="停止" title="停止" onClick={() => void cancel()}>
+            <button
+              type="button"
+              className="composer__send"
+              aria-label="停止"
+              title="停止"
+              onClick={() => void cancel()}
+            >
               <svg viewBox="0 0 12 12" aria-hidden="true">
                 <rect x="3" y="3" width="6" height="6" rx="1" />
               </svg>

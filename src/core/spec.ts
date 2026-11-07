@@ -34,7 +34,12 @@ const isName = (v: unknown): v is string => typeof v === "string" && v.trim() !=
 export function validateSpec(input: unknown): { spec: VoxelSpec | null; issues: Issue[] } {
   const schema: Issue[] = [];
   checkShape(input, (path, problem, zh) =>
-    schema.push({ level: "error", kind: "schema", message: `schema: ${path} ${problem}`, text: `格式不对：${path} ${zh}` }),
+    schema.push({
+      level: "error",
+      kind: "schema",
+      message: `schema: ${path} ${problem}`,
+      text: `格式不对：${path} ${zh}`,
+    }),
   );
   if (schema.length > 0) return { spec: null, issues: schema };
   // checkShape has verified every field the type declares.
@@ -55,7 +60,8 @@ function checkShape(input: unknown, fail: Fail): void {
     fail("palette", "must be an object", "要是一个对象");
   } else {
     for (const [key, hex] of Object.entries(input.palette)) {
-      if (!/^[A-Za-z]{1,2}$/.test(key)) fail(`palette.${key}`, "key must be 1-2 letters", "颜色的 key 要是 1 到 2 个字母");
+      if (!/^[A-Za-z]{1,2}$/.test(key))
+        fail(`palette.${key}`, "key must be 1-2 letters", "颜色的 key 要是 1 到 2 个字母");
       if (typeof hex !== "string" || !/^#[0-9a-fA-F]{6}$/.test(hex)) {
         fail(`palette.${key}`, 'must be "#rrggbb"', "要写成 #rrggbb");
       }
@@ -242,11 +248,20 @@ function floatingParts(grid: VoxelGrid): number[] {
       }
     }
   }
-  const steps = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]] as const;
+  const steps = [
+    [1, 0, 0],
+    [-1, 0, 0],
+    [0, 1, 0],
+    [0, -1, 0],
+    [0, 0, 1],
+    [0, 0, -1],
+  ] as const;
   for (let q = 0; q < queue.length; q++) {
     const [x, h, d] = queue[q]!;
     for (const [dx, dh, dd] of steps) {
-      const nx = x + dx, nh = h + dh, nd = d + dd;
+      const nx = x + dx,
+        nh = h + dh,
+        nd = d + dd;
       if (!inBounds(grid.size, nx, nh, nd)) continue;
       const i = cellIndex(grid.size, nx, nh, nd);
       if (grid.cells[i] && !reached[i]) {

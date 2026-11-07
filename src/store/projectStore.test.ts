@@ -104,7 +104,8 @@ describe("projectStore", () => {
     const other = createProject("b", "generate", { spec: basketball, prompt: "" }, startedAt);
     let release: (files: unknown) => void = () => {};
     mocked.mockImplementation(async (command: string, args?: unknown) => {
-      if (command === "load_project") return JSON.parse(JSON.stringify((args as { id: string }).id === "a" ? withRefs : other));
+      if (command === "load_project")
+        return JSON.parse(JSON.stringify((args as { id: string }).id === "a" ? withRefs : other));
       if (command === "load_refs") return new Promise((resolve) => (release = resolve));
       return undefined;
     });
@@ -140,7 +141,10 @@ describe("projectStore", () => {
 
   it("drops a project deleted outside the app", async () => {
     const project = createProject("20261105-2307", "generate", { spec: basketball, prompt: "" }, startedAt);
-    answer({ load_project: JSON.parse(JSON.stringify(project)), list_projects: [summary("20261105-2307", project.updatedAt)] });
+    answer({
+      load_project: JSON.parse(JSON.stringify(project)),
+      list_projects: [summary("20261105-2307", project.updatedAt)],
+    });
     await store.getState().refresh();
     await store.getState().open("20261105-2307");
 
@@ -154,7 +158,10 @@ describe("projectStore", () => {
   it("moves a project to the Trash and stays on the list", async () => {
     const kept = createProject("20261105-1000", "generate", { spec: basketball, prompt: "" }, startedAt);
     const gone = createProject("20261105-2307", "generate", { spec: basketball, prompt: "" }, startedAt);
-    answer({ load_project: JSON.parse(JSON.stringify(gone)), list_projects: [summary(gone.id, gone.updatedAt), summary(kept.id, kept.updatedAt)] });
+    answer({
+      load_project: JSON.parse(JSON.stringify(gone)),
+      list_projects: [summary(gone.id, gone.updatedAt), summary(kept.id, kept.updatedAt)],
+    });
     await store.getState().open(gone.id);
 
     answer({ load_project: JSON.parse(JSON.stringify(kept)), list_projects: [summary(kept.id, kept.updatedAt)] });
@@ -260,7 +267,8 @@ describe("browsing and editing", () => {
   beforeEach(() => {
     mocked.mockReset();
     mocked.mockImplementation(async (command: string, args?: unknown) => {
-      if (command === "load_project") return JSON.parse(JSON.stringify((args as { id: string }).id === ball.id ? ball : car));
+      if (command === "load_project")
+        return JSON.parse(JSON.stringify((args as { id: string }).id === ball.id ? ball : car));
       if (command === "list_projects") return [summary(ball.id, ball.updatedAt), summary(car.id, car.updatedAt)];
       return undefined;
     });

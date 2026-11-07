@@ -30,12 +30,33 @@ const RIGHT: Vec3 = [1, 0, 0];
 describe("extractFaces", () => {
   it("exposes six faces for a lone voxel and hides shared faces", () => {
     expect(extractFaces(grid([{ name: "a", color: "A", cells: [[1, 1, 1]] }]))).toHaveLength(6);
-    expect(extractFaces(grid([{ name: "a", color: "A", cells: [[1, 1, 1], [2, 1, 1]] }]))).toHaveLength(10);
+    expect(
+      extractFaces(
+        grid([
+          {
+            name: "a",
+            color: "A",
+            cells: [
+              [1, 1, 1],
+              [2, 1, 1],
+            ],
+          },
+        ]),
+      ),
+    ).toHaveLength(10);
   });
 
-
   it("keeps only the given heights, as if the rest were missing", () => {
-    const g = grid([{ name: "a", color: "A", cells: [[1, 0, 1], [1, 1, 1]] }]);
+    const g = grid([
+      {
+        name: "a",
+        color: "A",
+        cells: [
+          [1, 0, 1],
+          [1, 1, 1],
+        ],
+      },
+    ]);
     expect(extractFaces(g)).toHaveLength(10);
     expect(extractFaces(g, { heights: [0, 0] })).toHaveLength(6);
     expect(extractFaces(g, { heights: [1, 1] }).every((f) => f.center[1] >= 1)).toBe(true);
@@ -43,7 +64,18 @@ describe("extractFaces", () => {
 
   it("darkens faces with occluding neighbours", () => {
     const lone = extractFaces(grid([{ name: "a", color: "A", cells: [[1, 0, 1]] }]));
-    const walled = extractFaces(grid([{ name: "a", color: "A", cells: [[1, 0, 1], [2, 1, 1]] }]));
+    const walled = extractFaces(
+      grid([
+        {
+          name: "a",
+          color: "A",
+          cells: [
+            [1, 0, 1],
+            [2, 1, 1],
+          ],
+        },
+      ]),
+    );
     const top = (faces: ReturnType<typeof extractFaces>) =>
       faces.find((f) => f.normal[1] === 1 && f.center[0] === 1.5)?.brightness ?? 0;
     expect(top(walled)).toBeLessThan(top(lone));
@@ -82,13 +114,15 @@ describe("makeProjector", () => {
       const [cx, cy] = p.project([9, 14, 6]);
       expect(cx).toBeCloseTo(300);
       expect(cy).toBeCloseTo(200);
-      for (const x of [0, 18]) for (const h of [0, 28]) for (const d of [0, 12]) {
-        const [sx, sy] = p.project([x, h, d]);
-        expect(sx).toBeGreaterThanOrEqual(0);
-        expect(sx).toBeLessThanOrEqual(600);
-        expect(sy).toBeGreaterThanOrEqual(0);
-        expect(sy).toBeLessThanOrEqual(400);
-      }
+      for (const x of [0, 18])
+        for (const h of [0, 28])
+          for (const d of [0, 12]) {
+            const [sx, sy] = p.project([x, h, d]);
+            expect(sx).toBeGreaterThanOrEqual(0);
+            expect(sx).toBeLessThanOrEqual(600);
+            expect(sy).toBeGreaterThanOrEqual(0);
+            expect(sy).toBeLessThanOrEqual(400);
+          }
     }
   });
 
@@ -104,7 +138,11 @@ describe("toFloor", () => {
   it("inverts the projection for floor points", () => {
     for (const cam of [DEFAULT_CAMERA, camera(2.1, 0.4), { ...camera(-1, 1.2), zoom: 3, panX: 40, panY: -25 }]) {
       const p = makeProjector([18, 12, 28], cam, 600, 400);
-      for (const [x, d] of [[0, 0], [9, 6], [-30, 75]] as const) {
+      for (const [x, d] of [
+        [0, 0],
+        [9, 6],
+        [-30, 75],
+      ] as const) {
         const [sx, sy] = p.project([x, 0, d]);
         const back = p.toFloor(sx, sy);
         expect(back?.[0]).toBeCloseTo(x);

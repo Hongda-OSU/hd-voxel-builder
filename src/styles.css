@@ -272,7 +272,6 @@ ul {
   letter-spacing: 0.12em;
 }
 
-
 .panel__note {
   margin: auto 16px 16px;
   color: var(--muted);
@@ -963,9 +962,6 @@ ul {
   outline-offset: 1px;
 }
 
-
-
-
 /* Preview */
 
 .stage {
@@ -1207,8 +1203,6 @@ ul {
   opacity: 0.4;
   cursor: default;
 }
-
-
 
 .modal {
   position: fixed;

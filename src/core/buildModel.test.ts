@@ -18,10 +18,12 @@ describe("buildModel", () => {
   });
 
   it("lets later parts overwrite earlier ones and records provenance", () => {
-    const grid = buildModel(spec([
-      { name: "a", color: "A", boxes: [[0, 3, 0, 0, 0, 0]] },
-      { name: "b", color: "B", cells: [[2, 0, 0]] },
-    ]));
+    const grid = buildModel(
+      spec([
+        { name: "a", color: "A", boxes: [[0, 3, 0, 0, 0, 0]] },
+        { name: "b", color: "B", cells: [[2, 0, 0]] },
+      ]),
+    );
     expect(voxelAt(grid, 1, 0, 0)).toEqual({ color: "A", part: 0 });
     expect(voxelAt(grid, 2, 0, 0)).toEqual({ color: "B", part: 1 });
     expect(grid.writes).toEqual([4, 1]);
@@ -43,7 +45,22 @@ describe("buildModel", () => {
   });
 
   it("mirrors across the width with mirrorX", () => {
-    const grid = buildModel(spec([{ name: "a", color: "A", cells: [[1, 0, 0], [3, 0, 0]], mirrorX: true }], [8, 1, 1]));
+    const grid = buildModel(
+      spec(
+        [
+          {
+            name: "a",
+            color: "A",
+            cells: [
+              [1, 0, 0],
+              [3, 0, 0],
+            ],
+            mirrorX: true,
+          },
+        ],
+        [8, 1, 1],
+      ),
+    );
     expect(grid.cells.map((v) => (v ? 1 : 0))).toEqual([0, 1, 0, 1, 1, 0, 1, 0]);
     expect(grid.writes).toEqual([4]);
   });
@@ -61,10 +78,12 @@ describe("buildModel", () => {
   });
 
   it("only recolors existing voxels with paint", () => {
-    const grid = buildModel(spec([
-      { name: "a", color: "A", cells: [[0, 0, 0]] },
-      { name: "p", color: "B", boxes: [[0, 1, 0, 0, 0, 0]], paint: true },
-    ]));
+    const grid = buildModel(
+      spec([
+        { name: "a", color: "A", cells: [[0, 0, 0]] },
+        { name: "p", color: "B", boxes: [[0, 1, 0, 0, 0, 0]], paint: true },
+      ]),
+    );
     expect(voxelAt(grid, 0, 0, 0)).toEqual({ color: "B", part: 1 });
     expect(voxelAt(grid, 1, 0, 0)).toBeUndefined();
     expect(grid.writes).toEqual([1, 1]);

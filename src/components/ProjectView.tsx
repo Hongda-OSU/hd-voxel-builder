@@ -32,7 +32,11 @@ function Changes({ version }: { version: Version }) {
   return (
     <>
       {chips.slice(0, MAX_CHIPS).map(({ kind, mark, name }) => (
-        <span key={`${kind}-${name}`} className={`chip chip--${kind}`} title={`${label[kind as keyof typeof label]}「${name}」`}>
+        <span
+          key={`${kind}-${name}`}
+          className={`chip chip--${kind}`}
+          title={`${label[kind as keyof typeof label]}「${name}」`}
+        >
           <i aria-hidden="true">{mark}</i>
           {name}
         </span>

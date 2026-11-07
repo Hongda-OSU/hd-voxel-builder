@@ -1,0 +1,5 @@
+# Compiled into the app and copied to Notion; formatting would change what Claude reads.
+src/prompts/
+# Rust is formatted by cargo fmt.
+src-tauri/
+pnpm-lock.yaml

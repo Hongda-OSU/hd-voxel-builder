@@ -34,7 +34,19 @@ function replies(...specs: unknown[]) {
     // The saved project is listed, as on disk; otherwise the store would think it was deleted.
     if (command === "list_projects") {
       const open = useProjectStore.getState().project;
-      return open ? [{ id: open.id, name: open.name, style: open.style, updatedAt: open.updatedAt, current: open.current, versions: open.versions.length, spec: {} }] : [];
+      return open
+        ? [
+            {
+              id: open.id,
+              name: open.name,
+              style: open.style,
+              updatedAt: open.updatedAt,
+              current: open.current,
+              versions: open.versions.length,
+              spec: {},
+            },
+          ]
+        : [];
     }
     return undefined;
   });
@@ -127,7 +139,14 @@ describe("generateStore", () => {
 describe("reference images", () => {
   beforeEach(() => {
     mocked.mockReset();
-    store.setState({ style: "chibi", description: "", phase: { step: "idle" }, refs: [], attach: true, attachFor: null });
+    store.setState({
+      style: "chibi",
+      description: "",
+      phase: { step: "idle" },
+      refs: [],
+      attach: true,
+      attachFor: null,
+    });
     useProjectStore.setState({ projects: [], project: null, editing: false, refs: [], error: null });
   });
 
@@ -244,7 +263,12 @@ describe("helpers", () => {
   describe("with a project being edited", () => {
     const ball = validateSpec(good).spec as VoxelSpec;
     const open = () => {
-      const project = createProject("20261106-0900", "generate", { spec: ball, prompt: "一个篮球" }, new Date(2026, 10, 6, 9));
+      const project = createProject(
+        "20261106-0900",
+        "generate",
+        { spec: ball, prompt: "一个篮球" },
+        new Date(2026, 10, 6, 9),
+      );
       useProjectStore.setState({ project: { ...project, style: "chibi" }, editing: true });
     };
     const bigger = { ...ball, size: [30, 30, 30] };
