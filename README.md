@@ -51,17 +51,17 @@ pnpm build  # Build src-tauri/target/release/bundle/macos/HD Voxel Builder.app
 
 In the app:
 
-- **New model**: pick a style, describe it, and press Return. Drop or paste up to three images and click 看图写描述 to draft the description from them.
-- **Edit**: click a project to view it, then 修改 (or double-click) to open its versions and type changes such as 「车斗再长两格」.
-- **Export**: **在 MagicaVoxel 中打开** restarts MagicaVoxel with the model in its Project list; change its folder with ⌘,.
-- **Show off**: **▶ 搭建** replays the build; **Window › 录屏尺寸** sets the window to 1280 × 800 for recordings.
+- **New model**: pick a style, describe the model, and press Return. To start from pictures, drop or paste up to three images and let Claude draft the description.
+- **Edit**: click a project to view it, then its edit button (or a double-click) opens its versions; type a change such as "make the truck bed two blocks longer".
+- **Export**: the MagicaVoxel button restarts MagicaVoxel with the model in its Project list; change its folder with ⌘,.
+- **Show off**: the build button in the viewport toolbar replays the model layer by layer; the Window menu sets a 1280 × 800 size for recordings.
 
 Projects and their versions are saved in `~/HDVoxel/projects/<id>/`.
 
 To try prompts without the app, `pnpm gen` saves a spec to `src/prompts/examples/<slug>-<model>.local.json`, which git ignores:
 
 ```sh
-pnpm gen basketball --style object --model sonnet "一个篮球"
-pnpm gen hero --style chibi --model opus --image ref.png "做成图里这个角色"
+pnpm gen basketball --style object --model sonnet "a basketball"
+pnpm gen hero --style chibi --model opus --image ref.png "the character in the image"
 pnpm gen hero --describe --image ref.png   # Draft a description from images
 ```
